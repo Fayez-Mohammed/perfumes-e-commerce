@@ -1,0 +1,29 @@
+﻿namespace WallsShop.DTO;
+
+public class ProductTranslationOverviewDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+    public decimal PriceAfterDiscount { get; set; }
+    public string ImageUrl { get; set; }
+    public string CategoryEn { get; set; }
+    public string CategoryValue { get; set; }
+    public decimal TotalPeopleRating { get; set; }
+    
+    public decimal AverageRatingPeople { get; set; }
+    public bool IsInWishList { get; set; }
+    public int PageNumber { get; set; }
+}
+public class ProductTranslationOverviewForDashboardDto
+{
+    public int Id { get; set; }
+    public string sku { get; set; }
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+    public decimal PriceAfterDiscount { get; set; }
+    public string ImageUrl { get; set; }
+    public string Category { get; set; }
+
+    public int PageNumber { get; set; }
+}
