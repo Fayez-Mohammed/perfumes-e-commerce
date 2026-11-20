@@ -48,7 +48,15 @@ public class AccountController : ControllerBase
         _logger = logger;
     }
     
+    /// <summary>
+    /// Registers a new customer account and sends an email confirmation link.
+    /// </summary>
+    /// <param name="model">Registration data (email, password, display name, phone number).</param>
+    /// <param name="LanguageCode">Language code used for localized responses ("en" or "ar").</param>
+    /// <returns>A confirmation message together with the encoded email confirmation token.</returns>
     [HttpPost("register")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Register([FromBody] RegisterDto model, [FromQuery] string LanguageCode = "en")
     {
         var user = new User { UserName = model.Email, Email = model.Email ,Name = model.DisplayName, PhoneNumber = model.PhoneNumber};
@@ -65,7 +73,7 @@ public class AccountController : ControllerBase
         var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
 
        
-        var frontendUrl = "https://e-commerce-six-olive-70.vercel.app";
+        var frontendUrl = "https://mariam-perfumes.vercel.app";
         var callbackUrl = $"{frontendUrl}?token={encodedToken}&email={user.Email}";
 
         //await _emailService.SendEmailAsync(user.Email, "Confirm your email",
@@ -190,7 +198,16 @@ var htmlMessage = $@"
         return Ok(new {response = LanguageCode == "ar" ? "تم التسجيل بنجاح. يرجى التحقق من بريدك الإلكتروني لتأكيد حسابك." : "Registration successful. Please check your email to verify your account.",token=encodedToken});
     }
     
+    /// <summary>
+    /// Confirms a user's email address using the token sent during registration.
+    /// </summary>
+    /// <param name="model">The email address and the email confirmation token.</param>
+    /// <param name="LanguageCode">Language code used for localized responses ("en" or "ar").</param>
+    /// <returns>A localized confirmation message indicating the verification result.</returns>
     [HttpPost("confirm-email")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailDto model, [FromQuery] string LanguageCode = "en")
     {
         if (string.IsNullOrWhiteSpace(model.Token) || string.IsNullOrWhiteSpace(model.Email))
@@ -224,7 +241,15 @@ var htmlMessage = $@"
     }
 
 
+    /// <summary>
+    /// Authenticates a user and returns a JWT token, merging any guest cart and wishlist data into the account.
+    /// </summary>
+    /// <param name="loginDto">Login credentials, plus optional guest cart and wishlist items to merge.</param>
+    /// <param name="LanguageCode">Language code used for localized responses ("en" or "ar").</param>
+    /// <returns>The user's email and generated JWT token.</returns>
     [HttpPost("login")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login([FromBody] LoginDto loginDto, [FromQuery] string LanguageCode="en")
     {
         try
@@ -272,15 +297,27 @@ var htmlMessage = $@"
 
 
         
+    /// <summary>
+    /// Signs the user out.
+    /// </summary>
+    /// <returns>A confirmation message indicating the user has logged out.</returns>
     [HttpPost("logout")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> Logout()
     {
         await _signInManager.SignOutAsync();
         return Ok(new { response  = "Logged out successfully" });
     }
 
+    /// <summary>
+    /// Gets the profile information of the currently authenticated user.
+    /// </summary>
+    /// <returns>The user's name, email, phone number and roles.</returns>
     [Authorize]
     [HttpGet("user-info")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetCurrentUser()
     {
         
@@ -310,8 +347,18 @@ var htmlMessage = $@"
         });
     }
     
+    /// <summary>
+    /// Updates the name and phone number of an existing user.
+    /// </summary>
+    /// <param name="updateUserDto">The user's email and the new name and/or phone number.</param>
+    /// <param name="LanguageCode">Language code used for localized responses ("en" or "ar").</param>
+    /// <returns>A localized success message or validation errors.</returns>
     [Authorize]
     [HttpPut("update-user-info")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateUserInfo([FromBody] UpdateUserDto updateUserDto, [FromQuery] string LanguageCode = "en")
     {
         var user = await _userManager.FindByEmailAsync(updateUserDto.Email);
@@ -326,8 +373,17 @@ var htmlMessage = $@"
         return Ok(new { response  = LanguageCode == "ar" ? "تم تحديث معلومات المستخدم بنجاح" : "User information updated successfully" });
     }   
  
+    /// <summary>
+    /// Changes the password of the currently authenticated user.
+    /// </summary>
+    /// <param name="model">The old password and the new password.</param>
+    /// <param name="LanguageCode">Language code used for localized responses ("en" or "ar").</param>
+    /// <returns>A localized success message, or an error if the old password is incorrect.</returns>
     [Authorize]
     [HttpPost("change-password")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest model, [FromQuery] string LanguageCode = "en")
     {
         
@@ -350,7 +406,14 @@ var htmlMessage = $@"
         return Ok(new {response = LanguageCode == "ar" ? "تم تحديث كلمة المرور بنجاح." : "Password updated successfully."});
     }
     
+    /// <summary>
+    /// Sends a password reset OTP to the user's email address.
+    /// </summary>
+    /// <param name="model">The email address of the account requesting a password reset.</param>
+    /// <param name="LanguageCode">Language code used for localized responses ("en" or "ar").</param>
+    /// <returns>A localized message indicating that an OTP was sent (or a generic message if the email does not exist).</returns>
     [HttpPost("forgot-password")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgetPasswordDto model, [FromQuery] string LanguageCode = "en")
     {
         var user = await _userManager.FindByEmailAsync(model.Email);
@@ -365,7 +428,15 @@ var htmlMessage = $@"
         return Ok(new { response  = LanguageCode == "ar" ? "تم إرسال OTP إلى البريد الإلكتروني." : "OTP sent to email.", Email = model.Email });
     }
     
+    /// <summary>
+    /// Verifies a password reset OTP and issues a password reset token.
+    /// </summary>
+    /// <param name="model">The email address and the OTP code to verify.</param>
+    /// <param name="LanguageCode">Language code used for localized responses ("en" or "ar").</param>
+    /// <returns>A localized verification message and the password reset token.</returns>
     [HttpPost("verify-otp")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> VerifyOtp([FromBody] VerifyOtpRequest model, [FromQuery] string LanguageCode = "en")
     {
         var user = await _userManager.FindByEmailAsync(model.Email);
@@ -383,7 +454,14 @@ var htmlMessage = $@"
             ResetToken = resetToken
         });
     }
+    /// <summary>
+    /// Resends a new password reset OTP to the user's email address.
+    /// </summary>
+    /// <param name="model">The email address of the account requesting a new OTP.</param>
+    /// <param name="LanguageCode">Language code used for localized responses ("en" or "ar").</param>
+    /// <returns>A localized message indicating that a new OTP was sent (or a generic message if the email does not exist).</returns>
     [HttpPost("resend-otp")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> ResendOtp([FromBody] ResendOtpRequest model, [FromQuery] string LanguageCode = "en")
     {
         var user = await _userManager.FindByEmailAsync(model.Email);
@@ -396,7 +474,15 @@ var htmlMessage = $@"
 
         return Ok(new {response  = LanguageCode == "ar" ? "تم إرسال OTP جديد." : "A new OTP has been sent."});
     }
+    /// <summary>
+    /// Resets the user's password using the token obtained from OTP verification.
+    /// </summary>
+    /// <param name="model">The email address, reset token and new password.</param>
+    /// <param name="LanguageCode">Language code used for localized responses ("en" or "ar").</param>
+    /// <returns>A localized success message or the password reset validation errors.</returns>
     [HttpPost("reset-password")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest model, [FromQuery] string LanguageCode = "en")
     {
         var user = await _userManager.FindByEmailAsync(model.Email);

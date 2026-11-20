@@ -24,7 +24,13 @@ public class DashboardOffersController : ControllerBase
     }
 
    
+    /// <summary>Retrieves all dashboard offers.</summary>
+    /// <returns>A JSON object containing the list of offers; 500 on failure.</returns>
     [HttpGet("GetOffers")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetAllOffers()
     {
         try
@@ -40,7 +46,15 @@ public class DashboardOffersController : ControllerBase
     }
 
   
+    /// <summary>Retrieves a single offer by its identifier.</summary>
+    /// <param name="id">The identifier of the offer.</param>
+    /// <returns>A JSON object containing the offer; 404 if not found; 500 on failure.</returns>
     [HttpGet("SpecificOffer")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetOfferById([FromQuery] int id)
     {
         try
@@ -60,7 +74,16 @@ public class DashboardOffersController : ControllerBase
     }
 
   
+    /// <summary>Creates a new offer.</summary>
+    /// <param name="dto">The offer data, including any uploaded image.</param>
+    /// <returns>The created offer as a JSON object; 400 for invalid data or creation failure; 404 if the offer cannot be retrieved afterwards; 500 on failure.</returns>
     [HttpPost]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> CreateOffer([FromForm] CreateUpdateOfferDto dto)
     {
         try
@@ -89,7 +112,17 @@ public class DashboardOffersController : ControllerBase
     }
 
 
+    /// <summary>Updates an existing offer.</summary>
+    /// <param name="id">The identifier of the offer to update.</param>
+    /// <param name="dto">The updated offer data, including any uploaded image.</param>
+    /// <returns>The updated offer as a JSON object; 400 for invalid data or update failure; 404 if the offer cannot be retrieved afterwards; 500 on failure.</returns>
     [HttpPut("UpdateOffer")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> UpdateOffer([FromQuery] int id, [FromForm] CreateUpdateOfferDto dto)
     {
         try
@@ -112,7 +145,15 @@ public class DashboardOffersController : ControllerBase
     }
 
    
+    /// <summary>Deletes an offer.</summary>
+    /// <param name="id">The identifier of the offer to delete.</param>
+    /// <returns>A JSON object with a success or failure message; 400 if deletion fails; 500 on failure.</returns>
     [HttpDelete("DeleteOffer")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> DeleteOffer([FromQuery] int id)
     {
         try

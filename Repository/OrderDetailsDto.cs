@@ -1,4 +1,3 @@
-﻿
 namespace WallsShop.Repository
 {
     public class OrderDetailsDto
@@ -12,6 +11,8 @@ namespace WallsShop.Repository
         public decimal TotalPrice { get; set; }
         public string? Status { get; set; }
         public string? Note { get; set; }
-        public  List<OrderItemDto> Items { get; set; }
+        public string? PaymentMethod { get; set; }
+        public string? PaymentStatus { get; set; }
+        public List<OrderItemDto> Items { get; set; }
     }
 }

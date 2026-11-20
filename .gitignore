@@ -9,3 +9,12 @@ riderModule.iml
 *.DotSettings.user
 login_error.txt
 wwwroot/
+# Environment / secrets
+.env
+.env.*
+!.env.example
+# Ignore publish profiles
+**/Properties/PublishProfiles/*.pubxml
+
+# Ignore local app settings
+**/appsettings.json

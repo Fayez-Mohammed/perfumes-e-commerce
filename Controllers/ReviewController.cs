@@ -28,6 +28,12 @@ public class ReviewController(ReviewRepository repo,UserManager<User> _userManag
 
    // [Authorize]
     
+    /// <summary>
+    /// Gets the reviews for a product, including the average rating, total review count, and per-review deletion permissions for the current user.
+    /// </summary>
+    /// <param name="productId">The identifier of the product whose reviews are requested.</param>
+    /// <returns>An object containing the product's review details under the response property.</returns>
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [HttpGet("reviews")]
     public async Task<IActionResult> GetReviews([FromQuery] int productId)
     {
@@ -39,6 +45,15 @@ public class ReviewController(ReviewRepository repo,UserManager<User> _userManag
         return Ok(new { response = reviews });
     }
 
+    /// <summary>
+    /// Creates a review for a product by the currently authenticated user and updates the product's rating aggregates.
+    /// </summary>
+    /// <param name="review">The review data, including the product id, rating, and comment.</param>
+    /// <param name="LanguageCode">The language code used for localized error messages (defaults to "en").</param>
+    /// <returns>The updated review details for the product.</returns>
+    [ProducesResponseType(typeof(ReviewResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     [Authorize]
     [HttpPost("create-review")]
     public async Task<IActionResult> CreateReview([FromBody] ReviewDto review, [FromQuery] string LanguageCode = "en")
@@ -51,6 +66,15 @@ public class ReviewController(ReviewRepository repo,UserManager<User> _userManag
 
         return Ok(result);
     }
+    /// <summary>
+    /// Deletes a review by its identifier and recalculates the product's rating aggregates.
+    /// </summary>
+    /// <param name="id">The identifier of the review to delete.</param>
+    /// <param name="LanguageCode">The language code used for localized error messages (defaults to "en").</param>
+    /// <returns>The updated review details for the affected product.</returns>
+    [ProducesResponseType(typeof(ReviewResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     [Authorize]
     [HttpDelete("delete-review")]
     public async Task<IActionResult> DeleteReview([FromQuery] int id, [FromQuery] string LanguageCode = "en")
@@ -60,6 +84,14 @@ public class ReviewController(ReviewRepository repo,UserManager<User> _userManag
             return BadRequest(new { message = LanguageCode == "ar" ? "حدث خطأ ما" : "Some thing wrong happend" });
         return Ok(result);
     }
+    /// <summary>
+    /// Gets all reviews with user and product details for administrative management.
+    /// </summary>
+    /// <param name="LanguageCode">The language code used to select the product name (defaults to "ar").</param>
+    /// <returns>An object containing all review details under the response property.</returns>
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
     [Authorize(Roles ="Admin")]
     [HttpGet("all-reviews-admin")]
     public async Task<IActionResult> GetAllReviewsAdmin([FromQuery] string LanguageCode = "ar")

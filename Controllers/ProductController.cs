@@ -8,6 +8,12 @@ namespace WallsShop.Controllers;
 [Route("api/[controller]")]
 public class ProductController(ProductRepository products , IWebHostEnvironment env) : ControllerBase
 {    
+     /// <summary>
+     /// Gets a single product by its identifier, localized according to the requested language. When the user is authenticated, user-specific data (such as wishlist state) is included.
+     /// </summary>
+     /// <param name="queryParameters">Query parameters including the product id, language code, and paging options.</param>
+     /// <returns>An object containing the requested product under the Response property.</returns>
+     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
      [HttpGet("product")]
      public async Task<IActionResult> GetProductById
           ([FromQuery] QueryParameters queryParameters)
@@ -28,6 +34,12 @@ public class ProductController(ProductRepository products , IWebHostEnvironment 
           return Ok(new {Response =list1});
      }
      
+     /// <summary>
+     /// Gets a paginated overview of products, localized according to the requested language. When the user is authenticated, user-specific data is included.
+     /// </summary>
+     /// <param name="queryParameters">Query parameters including search, order, category, paging, and language code.</param>
+     /// <returns>An object containing the product list under the Response property.</returns>
+     [ProducesResponseType(typeof(PagedResult<ProductOverviewDto>), StatusCodes.Status200OK)]
      [HttpGet("products")]
      public async Task<IActionResult> GetProducts
           ([FromQuery] QueryParameters queryParameters)
@@ -48,6 +60,13 @@ public class ProductController(ProductRepository products , IWebHostEnvironment 
           return Ok(new {Response =list1});
      }
      
+     /// <summary>
+     /// Gets products related to the given product by its category, localized according to the requested language.
+     /// </summary>
+     /// <param name="queryParameters">Query parameters including paging and language code.</param>
+     /// <param name="id">The identifier of the product whose related products are requested.</param>
+     /// <returns>An object containing the related product list under the Response property.</returns>
+     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
      [HttpGet("related-product")]
      public async Task<IActionResult> GetRelatedProducts
           ([FromQuery] QueryParameters queryParameters , [FromQuery] int id )
@@ -73,6 +92,12 @@ public class ProductController(ProductRepository products , IWebHostEnvironment 
           return Ok(new {Response =list1});
      }
      
+     /// <summary>
+     /// Gets the four most recently added products, localized according to the requested language.
+     /// </summary>
+     /// <param name="queryParameters">Query parameters including paging and language code.</param>
+     /// <returns>An object containing the recent products under the Response property.</returns>
+     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
      [HttpGet("top-recent-product")]
      public async Task<IActionResult> GetTopRecentProducts
           ([FromQuery] QueryParameters queryParameters)
@@ -94,6 +119,12 @@ public class ProductController(ProductRepository products , IWebHostEnvironment 
           return Ok(new {Response =list1});
      }
 
+     /// <summary>
+     /// Gets the four highest-rated products, localized according to the requested language.
+     /// </summary>
+     /// <param name="queryParameters">Query parameters including paging and language code.</param>
+     /// <returns>An object containing the top-rated products under the Response property.</returns>
+     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
      [HttpGet("top-rated-product")]
      public async Task<IActionResult> GetTopRatedProducts
           ([FromQuery] QueryParameters queryParameters)

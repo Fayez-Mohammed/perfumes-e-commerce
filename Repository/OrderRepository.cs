@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using WallsShop.Context;
 using WallsShop.DTO;
 using WallsShop.Properties.Entity;
@@ -28,17 +28,27 @@ public class OrderRepository(WallShopContext ctx, IServiceScopeFactory scopeFact
                 ItemsCount = o.OrderDetailsList.Count,
 
                 TotalPrice = o.TotalAmount,
-                Status = LanguageCode == "ar" ? (o.Status == "Confirmed" ? "مؤكد" : o.Status == "Pending" ? "معلق" : "ملغي") : o.Status,
+                Status = LanguageCode == "ar" ? (o.Status == "Confirmed" ? "مؤكد" : o.Status == "Pending" ? "معلق" : o.Status == "AwaitingPayment" ? "في انتظار الدفع" : "ملغي") : o.Status,
                 Note=o.Note,
+                PaymentMethod = o.PaymentMethod ?? "COD",
+                PaymentStatus = o.PaymentStatus ?? "Unpaid",
             })
             .ToListAsync();
     }
-    public async Task<bool> ConfirmOrderStatusAsync(int orderId)
+    public async Task<ConfirmOrderResult> ConfirmOrderStatusAsync(int orderId)
     {
         // نجلب الطلب من قاعدة البيانات
         var order = await ctx.Orders.FirstOrDefaultAsync(o => o.Id == orderId);
 
-        if (order == null) return false;
+        if (order == null) return ConfirmOrderResult.NotFound;
+
+        // أوردر دفع أونلاين (Card/Wallet) مينفعش يتأكد قبل ما الدفع ينجح
+        // (الأوردرات القديمة PaymentMethod فيها NULL فبتتعامل كـ COD)
+        if ((order.PaymentMethod == "Card" || order.PaymentMethod == "Wallet") && order.PaymentStatus != "Paid")
+            return ConfirmOrderResult.NotPaid;
+
+        // متأكد قبل كده: منبعتش الإيميل تاني
+        if (order.Status == "Confirmed") return ConfirmOrderResult.Ok;
 
         // تحديث حالة الطلب
         order.Status = "Confirmed";
@@ -48,7 +58,7 @@ public class OrderRepository(WallShopContext ctx, IServiceScopeFactory scopeFact
         // نمرر الـ UserId لنجلب الإيميل الخاص به
         NotifyCustomerInBackground(order.Id, order.UserId, order.ReceiverName, order.TotalAmount);
 
-        return true;
+        return ConfirmOrderResult.Ok;
     }
 
     // دالة إرسال الإيميل للعميل في الخلفية
@@ -248,6 +258,18 @@ public class OrderRepository(WallShopContext ctx, IServiceScopeFactory scopeFact
 
     //    }
 
+    private static string TranslateStatus(string status, bool isArabic)
+    {
+        if (!isArabic) return status;
+        return status switch
+        {
+            "Confirmed" => "مؤكد",
+            "Pending" => "معلق",
+            "AwaitingPayment" => "في انتظار الدفع",
+            _ => "ملغي"
+        };
+    }
+
     public async Task<OrderDetailsDto?> GetOrderDetailsByIdAsync(int orderId, string LanguageCode = "en")
     {
         // أضفنا AsSplitQuery لتحسين الأداء ومنع مشكلة Cartesian Explosion الناتجة عن كثرة الـ Includes
@@ -274,7 +296,9 @@ public class OrderRepository(WallShopContext ctx, IServiceScopeFactory scopeFact
             OrderDate = order.OrderDate.ToString("yyyy-MM-dd"),
             TotalPrice = order.TotalAmount,
             //    Status = order.Status,
-            Status = LanguageCode == "ar" ? (order.Status == "Confirmed" ? "مؤكد" : order.Status == "Pending" ? "معلق" : "ملغي") : order.Status,
+            Status = TranslateStatus(order.Status, isArabic),
+            PaymentMethod = order.PaymentMethod ?? "COD",
+            PaymentStatus = order.PaymentStatus ?? "Unpaid",
 
             Note = order.Note,
             // حماية الـ List والتأكد من عدم حدوث NullReference
@@ -302,4 +326,11 @@ public class OrderRepository(WallShopContext ctx, IServiceScopeFactory scopeFact
             }).ToList() ?? new List<OrderItemDto>()
         };
     }
+}
+
+public enum ConfirmOrderResult
+{
+    Ok,
+    NotFound,
+    NotPaid
 }

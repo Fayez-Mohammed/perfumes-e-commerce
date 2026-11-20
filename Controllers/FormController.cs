@@ -10,7 +10,12 @@ namespace WallsShop.Controllers;
 // التعديل 1: الوراثة من ControllerBase
 public class FormController(FormRepository repo) : ControllerBase
 {
+    /// <summary>Submits a contact/feedback form.</summary>
+    /// <param name="form">The form data to submit.</param>
+    /// <returns>A success message when the form is saved, otherwise a failure message.</returns>
     [HttpPost("add-form")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create([FromBody] FormDto form)
     {
         // التعديل 2: الاعتماد على الـ bool الذي يرجع من الـ Repo مباشرة

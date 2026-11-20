@@ -11,8 +11,13 @@ namespace WallsShop.Controllers;
 public class SitemapController(WallShopContext ctx) : ControllerBase
 {
     // رابط الواجهة الأمامية (Angular)
-    private readonly string _frontendUrl = "https://wallsshop-furniture.com";
+    private readonly string _frontendUrl = "https://mariam-perfumes.vercel.app";
 
+    /// <summary>
+    /// Generates the XML sitemap containing the frontend base pages and product pages with hreflang alternates.
+    /// </summary>
+    /// <returns>The sitemap XML document as UTF-8 encoded content.</returns>
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
     [HttpGet("/sitemap.xml")]
     [Produces("application/xml")]
     public async Task<IActionResult> GenerateSitemap()
@@ -101,6 +106,11 @@ public class SitemapController(WallShopContext ctx) : ControllerBase
         return Content(sb.ToString(), "application/xml", Encoding.UTF8);
     }
 
+    /// <summary>
+    /// Generates the robots.txt file that allows crawling of public pages, disallows private and API paths, and references the sitemap.
+    /// </summary>
+    /// <returns>The robots.txt content as UTF-8 encoded plain text.</returns>
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
     [HttpGet("/robots.txt")]
     [Produces("text/plain")]
     public IActionResult GenerateRobotsTxt()

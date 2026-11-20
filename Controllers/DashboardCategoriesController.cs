@@ -22,7 +22,13 @@ public class DashboardCategoriesController : ControllerBase
         _logger = logger;
     }
 
+    /// <summary>Retrieves all dashboard categories.</summary>
+    /// <returns>A JSON object containing the list of categories; 500 on failure.</returns>
     [HttpGet]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetAllCategories()
     {
         try
@@ -38,7 +44,15 @@ public class DashboardCategoriesController : ControllerBase
     }   
        
        
+    /// <summary>Retrieves a single category by its identifier.</summary>
+    /// <param name="id">The identifier of the category.</param>
+    /// <returns>A JSON object containing the category; 404 if not found; 500 on failure.</returns>
     [HttpGet("GetCategoryById")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetCategoryById([FromQuery] int id)
     {
         try
@@ -58,7 +72,16 @@ public class DashboardCategoriesController : ControllerBase
     }
 
 
+    /// <summary>Creates a new category.</summary>
+    /// <param name="dto">The category data, including any uploaded image.</param>
+    /// <returns>The created category as a JSON object; 400 for invalid data or creation failure; 404 if the category cannot be retrieved afterwards; 500 on failure.</returns>
     [HttpPost("CreateCategory")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> CreateCategory([FromForm] CreateUpdateCategoryDto dto)
     {
         try
@@ -87,7 +110,17 @@ public class DashboardCategoriesController : ControllerBase
     }
 
 
+    /// <summary>Updates an existing category.</summary>
+    /// <param name="id">The identifier of the category to update.</param>
+    /// <param name="dto">The updated category data, including any uploaded image.</param>
+    /// <returns>The updated category as a JSON object; 400 for invalid data or update failure; 404 if the category cannot be retrieved afterwards; 500 on failure.</returns>
     [HttpPut("UpdateCategory")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> UpdateCategory([FromQuery] int id, [FromForm] CreateUpdateCategoryDto dto)
     {
         try
@@ -111,7 +144,15 @@ public class DashboardCategoriesController : ControllerBase
     }
 
 
+    /// <summary>Deletes a category.</summary>
+    /// <param name="id">The identifier of the category to delete.</param>
+    /// <returns>A JSON object with a success or failure message; 400 if deletion fails; 500 on failure.</returns>
     [HttpDelete("DeleteCategory")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> DeleteCategory(int id)
     {
         try

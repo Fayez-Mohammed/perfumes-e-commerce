@@ -86,7 +86,13 @@ public class DashBoardController : ControllerBase
         public int TotalOrders { get; set; }
         public decimal TotalSales { get; set; }
     }
+    /// <summary>Gets aggregate dashboard statistics (products, categories, offers, users, orders and sales).</summary>
+    /// <returns>A JSON object containing a success flag and the dashboard summary data; 500 on failure.</returns>
     [HttpGet("summary")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetDashboardSummary()
     {
         try
@@ -95,7 +101,7 @@ public class DashBoardController : ControllerBase
             var totalCategories = await _categoryRepository.GetTotalCategoriesCount();
             var totalOffers = await _offerRepository.GetTotalOffersCount();
             var totalUsers = await _userManager.Users.CountAsync();
-            var totalOrders = await _context.Orders.CountAsync();
+            var totalOrders = await _context.Orders.CountAsync(o => o.Status != "AwaitingPayment");
             var totalSales = await _context.Orders.Where(o=>o.Status=="Confirmed").SumAsync(o => o.TotalAmount);
             var summary = new DashboardSummaryDto
             {
@@ -122,12 +128,14 @@ public class DashBoardController : ControllerBase
         public List<DashboardProductDto> Products { get; set; }
     }
 
-    /// <summary>
-    /// POST: api/product/add-product
-    /// إضافة منتج - كل شيء JSON
-    /// </summary>
+    /// <summary>Adds a new product, including its uploaded images.</summary>
+    /// <param name="request">The multipart form data containing the product JSON and image files.</param>
+    /// <returns>A JSON object with a success or failure message; 400 if the request data is invalid.</returns>
     [HttpPost("add-product")]
-
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> AddProduct([FromForm] ProductAddRequest request )
     {
 
@@ -145,7 +153,14 @@ public class DashBoardController : ControllerBase
         return BadRequest(new { response = "فشل في إضافة المنتج" });
     }
 
+    /// <summary>Deletes an existing product and its associated images.</summary>
+    /// <param name="id">The identifier of the product to delete.</param>
+    /// <returns>A JSON object with a success or failure message; 400 if the identifier is invalid or deletion fails.</returns>
     [HttpDelete("delete-product")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
     //  [Authorize(Roles = "Admin,SystemAdmin")]
     public async Task<IActionResult> DeleteProduct([FromQuery] int id)
     {
@@ -159,7 +174,15 @@ public class DashBoardController : ControllerBase
 
         return BadRequest(new { response = message });
     }
+    /// <summary>Retrieves all registered customers.</summary>
+    /// <param name="LanguageCode">Language code ("ar" or "en") used to localize status labels and messages.</param>
+    /// <returns>A JSON object with the customer list; 404 if no customers exist; 500 on failure.</returns>
     [HttpGet("GetAllCustomers")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetAllCustomers([FromQuery] string LanguageCode = "en")
     {
         try
@@ -196,7 +219,15 @@ public class DashBoardController : ControllerBase
     }
 
  
+    /// <summary>Deletes a customer account by its identifier.</summary>
+    /// <param name="id">The identifier of the customer to delete.</param>
+    /// <returns>A JSON object with a success or failure message; 400 if the identifier is invalid or deletion fails; 404 if the customer is not found.</returns>
     [HttpDelete("DeleteCustomer")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteCustomer([FromQuery] string id)
     {
         if (string.IsNullOrEmpty(id))
@@ -221,7 +252,15 @@ public class DashBoardController : ControllerBase
         return BadRequest(new { response = errorMessage });
     }
  
+    /// <summary>Updates an existing product, optionally adding new images and deleting existing ones.</summary>
+    /// <param name="request">The multipart form data containing the product JSON, new images and image ids to delete.</param>
+    /// <param name="LanguageCode">Language code ("ar" or "en") used to localize the response message.</param>
+    /// <returns>A JSON object with a success or failure message; 400 if the update fails.</returns>
     [HttpPut("update-product")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> UpdateProduct( [FromForm] ProductUpdateRequest request, [FromQuery] string LanguageCode = "en")
     {
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
@@ -237,8 +276,16 @@ public class DashBoardController : ControllerBase
    
     
 
+    /// <summary>Blocks a user account.</summary>
+    /// <param name="userId">The identifier of the user to block.</param>
+    /// <returns>A JSON object with a confirmation message; 400 if the user cannot be blocked; 404 if the user is not found.</returns>
     [Authorize(Roles = "Admin")]
     [HttpPut("BlockUser")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> BlockUser([FromQuery] string userId)
     {
         
@@ -255,8 +302,15 @@ public class DashBoardController : ControllerBase
         await _userManager.UpdateAsync(user);
         return Ok(new { response = "User has been blocked." });
     }
+    /// <summary>Unblocks a previously blocked user account.</summary>
+    /// <param name="userId">The identifier of the user to unblock.</param>
+    /// <returns>A JSON object with a confirmation message; 404 if the user is not found.</returns>
     [Authorize(Roles = "Admin")]
     [HttpPut("UnBlockUser")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UnBlockUser([FromQuery] string userId)
     {
         var user = await _userManager.FindByIdAsync(userId);
@@ -265,8 +319,16 @@ public class DashBoardController : ControllerBase
         await _userManager.UpdateAsync(user);
         return Ok(new { response = "User has been unblocked." });
     }
+    /// <summary>Toggles the blocked status of a user account.</summary>
+    /// <param name="userId">The identifier of the user whose blocked status is toggled.</param>
+    /// <returns>A JSON object with the resulting block status message; 400 if the user cannot be modified; 404 if the user is not found.</returns>
     [Authorize(Roles = "Admin")]
     [HttpPut("ToggleBlock")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ToggleBlock([FromQuery] string userId)
     {
         var user = await _userManager.FindByIdAsync(userId);
@@ -288,7 +350,15 @@ public class DashBoardController : ControllerBase
         return Ok(new { response = user.IsBlocked ? "User has been blocked." : "User has been unblocked." });
     }
 
+    /// <summary>Retrieves a product in Arabic and English for editing in the dashboard.</summary>
+    /// <param name="queryParameters">Query parameters including the product id and language options.</param>
+    /// <returns>A JSON object containing the product data; 400 if the id is invalid; 404 if the product is not found.</returns>
     [HttpGet("GetProductForEdit")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProductForEdit([FromQuery] QueryParameters queryParameters)
     {
         string? userId = null;
@@ -303,7 +373,15 @@ public class DashBoardController : ControllerBase
             return NotFound(new { response = "المنتج غير موجود" });
         return Ok(new { success = true, data = product });
     }
+    /// <summary>Creates a new admin user. Only the primary administrator account may call this endpoint.</summary>
+    /// <param name="model">The admin user details including email, name, phone number and password.</param>
+    /// <param name="LanguageCode">Language code ("ar" or "en") used to localize messages and status labels.</param>
+    /// <returns>A JSON object containing the created admin; 400 for invalid data or creation failure; 401 if the caller is not the primary administrator.</returns>
     [HttpPost("AddAdmin")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> AddAdmin([FromBody] AdminAddDto model, [FromQuery] string LanguageCode = "en")
     {
         if (!ModelState.IsValid)
@@ -357,7 +435,14 @@ public class DashBoardController : ControllerBase
 
 // ... داخل الـ Controller الخاص بك ...
 
+/// <summary>Exports all dashboard orders as an XML file.</summary>
+/// <param name="LanguageCode">Language code ("ar" or "en") used to localize the order data.</param>
+/// <returns>An XML file download; 404 if no orders exist.</returns>
 [HttpGet("DownloadOrdersXml")]
+[ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+[ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+[ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
+[ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
 public async Task<IActionResult> DownloadOrdersXml([FromQuery] string LanguageCode = "en")
 {
     // 1. جلب بيانات الطلبات من الداتا بيز بنفس الدالة الممتازة الخاصة بك
@@ -385,24 +470,47 @@ public async Task<IActionResult> DownloadOrdersXml([FromQuery] string LanguageCo
     return File(fileBytes, "application/xml", fileName);
 }
 //===================
+/// <summary>Retrieves all orders for the dashboard.</summary>
+/// <param name="LanguageCode">Language code ("ar" or "en") used to localize the order data.</param>
+/// <returns>The list of dashboard orders.</returns>
 [HttpGet("GetAllOrders")]
+    [ProducesResponseType(typeof(List<OrderDashboardDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetAllOrders([FromQuery] string LanguageCode = "en")
     {
         var orders = await _orderRepo.GetAllOrdersForDashboardAsync(LanguageCode);
         return Ok(orders);
     }
 
+    /// <summary>Confirms an order after verifying that it has been paid.</summary>
+    /// <param name="id">The identifier of the order to confirm.</param>
+    /// <returns>A JSON object with a confirmation message; 400 if the order is not paid; 404 if the order is not found.</returns>
     [HttpPut("ConfirmOrder")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ConfirmStatus([FromQuery]int id)
     {
         var result = await _orderRepo.ConfirmOrderStatusAsync(id);
 
-        if (!result)
-            return NotFound("Order not found");
-
-        return Ok(new { message = "Order Confirmed successfully" });
+        return result switch
+        {
+            ConfirmOrderResult.NotFound => NotFound("Order not found"),
+            ConfirmOrderResult.NotPaid  => BadRequest(new { message = "Order is not paid yet" }),
+            _ => Ok(new { message = "Order Confirmed successfully" })
+        };
     }
+    /// <summary>Cancels an existing order.</summary>
+    /// <param name="id">The identifier of the order to cancel.</param>
+    /// <returns>A JSON object with a cancellation message; 404 if the order is not found.</returns>
     [HttpPut("CancelOrder")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> CancelStatus([FromQuery]int id)
     {
         var result = await _orderRepo.CancelOrderStatusAsync(id);
@@ -413,7 +521,14 @@ public async Task<IActionResult> DownloadOrdersXml([FromQuery] string LanguageCo
         return Ok(new { message = "Order Canceld successfully" });
     }
 
+    /// <summary>Deletes an order.</summary>
+    /// <param name="id">The identifier of the order to delete.</param>
+    /// <returns>A JSON object with a deletion message; 404 if the order is not found.</returns>
     [HttpDelete("Delete-Order")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteOrder(int id)
     {
         var result = await _orderRepo.DeleteOrderAsync(id);
@@ -423,7 +538,15 @@ public async Task<IActionResult> DownloadOrdersXml([FromQuery] string LanguageCo
 
         return Ok(new { message = "Order deleted successfully" });
     }
+    /// <summary>Retrieves the details of a specific order.</summary>
+    /// <param name="id">The identifier of the order.</param>
+    /// <param name="LanguageCode">Language code ("ar" or "en") used to localize the order details.</param>
+    /// <returns>The order details; 404 if the order is not found.</returns>
     [HttpGet("GetOrderDetails")]
+    [ProducesResponseType(typeof(OrderDetailsDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetOrderDetails(int id,string LanguageCode="en")
     {
         var orderDetails = await _orderRepo.GetOrderDetailsByIdAsync(id,LanguageCode);
@@ -432,7 +555,13 @@ public async Task<IActionResult> DownloadOrdersXml([FromQuery] string LanguageCo
 
         return Ok(orderDetails);
     }
+    /// <summary>Retrieves a paged list of products for the dashboard, using the translated or Arabic overview based on language.</summary>
+    /// <param name="queryParameters">Query parameters including paging, filtering and language options.</param>
+    /// <returns>A JSON object containing the product overview list.</returns>
     [HttpGet("productsForDashboard")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetProducts
      ([FromQuery] QueryParameters queryParameters)
     {

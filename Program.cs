@@ -14,7 +14,40 @@ using WallsShop.Repository;
 using WallsShop.Repository.Dashboard;
 using WallsShop.Services;
 //using Swashbuckle.AspNetCore.SwaggerGen;
+
+// Load .env (if present) before the builder reads configuration.
+// Real environment variables take precedence over values in the file.
+LoadDotEnv(Path.Combine(Directory.GetCurrentDirectory(), ".env"));
+
 var builder = WebApplication.CreateBuilder(args);
+
+static void LoadDotEnv(string path)
+{
+    if (!File.Exists(path)) return;
+
+    foreach (var rawLine in File.ReadLines(path))
+    {
+        var line = rawLine.Trim();
+        if (line.Length == 0 || line.StartsWith('#')) continue;
+
+        var separator = line.IndexOf('=');
+        if (separator <= 0) continue;
+
+        var name = line[..separator].Trim();
+        var value = line[(separator + 1)..].Trim();
+
+        if (value.Length >= 2 &&
+            ((value[0] == '"' && value[^1] == '"') || (value[0] == '\'' && value[^1] == '\'')))
+        {
+            value = value[1..^1];
+        }
+
+        if (name.Length == 0 || Environment.GetEnvironmentVariable(name) is not null)
+            continue;
+
+        Environment.SetEnvironmentVariable(name, value);
+    }
+}
 
 builder.Services.AddDbContext<WallShopContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -102,6 +135,8 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddSingleton<CartService>();
 // 1. Load settings from appsettings.json
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
+builder.Services.Configure<PaymobSettings>(builder.Configuration.GetSection("Paymob"));
+builder.Services.AddHttpClient<IPaymobService, PaymobService>();
 builder.Services.AddScoped<OfferRepository>();
 builder.Services.AddScoped<WishlistRepository>();
 builder.Services.AddTransient<IEmailService, SmtpEmailService>();
@@ -123,37 +158,38 @@ builder.Services.AddEndpointsApiExplorer();
 
 //builder.Services.AddScoped<CartService>();
 ////////////////////
-//builder.Services.AddCors(options =>
-//{
-//    options.AddPolicy("AllowAll", policy =>
-//    {
-//        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
-//    });
-
-//});
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAngular",
-        policy =>
-        {
-            policy.WithOrigins(
-                "http://localhost:4200",             // Local Development
-                "http://localhost:3000",             // Local Development
-                "https://e-commerce-six-olive-70.vercel.app",             // Local Development
-                "https://wallsshop-2.vercel.app",
-                "https://wallsshop-furniture.com",    // Netlify Deployment
-                "http://wallsshop-furniture.com",    // Netlify Deployment
-                "https://www.wallsshop-furniture.com",    // Netlify Deployment
-                "http://www.wallsshop-furniture.com"    // Netlify Deployment
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+    });
 
-
-             )
-                  .AllowAnyHeader()
-                  .AllowAnyMethod()
-                  .AllowCredentials();
-
-        });
 });
+//builder.Services.AddCors(options =>
+//{
+//    options.AddPolicy("AllowAngular",
+//        policy =>
+//        {
+//            policy.WithOrigins(
+//                "http://localhost:4200",             // Local Development
+//                "http://localhost:3000",             // Local Development
+//                "https://mariam-perfumes.vercel.app", // Production frontend
+//                "https://e-commerce-six-olive-70.vercel.app", // Old frontend
+//                "https://wallsshop-2.vercel.app",
+//                "https://wallsshop-furniture.com",    // Netlify Deployment
+//                "http://wallsshop-furniture.com",    // Netlify Deployment
+//                "https://www.wallsshop-furniture.com",    // Netlify Deployment
+//                "http://www.wallsshop-furniture.com"    // Netlify Deployment
+
+
+//             )
+//                  .AllowAnyHeader()
+//                  .AllowAnyMethod()
+//                  .AllowCredentials();
+
+//        });
+//});
 
 //////////Swagger\\\\\\\\\\\\\\\\\\\\
 ///
@@ -162,6 +198,11 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "WallsShop API", Version = "v1" });
+
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+        c.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
 
     c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
@@ -219,8 +260,8 @@ app.UseSwaggerUI(options =>
 app.UseHttpsRedirection();
 app.UseStaticFiles(); 
 app.UseRouting();
-app.UseCors("AllowAngular");
-
+//app.UseCors("AllowAngular");
+app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseMiddleware<BlockedUserMiddleware>();
 

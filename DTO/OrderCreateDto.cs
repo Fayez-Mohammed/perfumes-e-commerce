@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace WallsShop.DTO;
 
@@ -14,4 +14,7 @@ public class CreateOrderDto
     public string PhoneNumber { get; set; }
 
     public string? Note { get; set; }
+
+    /// <summary>COD (الافتراضي) | Card | Wallet</summary>
+    public string? PaymentMethod { get; set; } = "COD";
 }
