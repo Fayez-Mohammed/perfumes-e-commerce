@@ -96,6 +96,16 @@ builder.Services.AddAuthentication(options =>
 
     options.Events = new JwtBearerEvents
     {
+        OnMessageReceived = context =>
+        {
+            var authHeader = context.Request.Headers.Authorization.ToString();
+            if (!string.IsNullOrEmpty(authHeader) && !authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            {
+                // If token was sent directly without 'Bearer ' prefix, accept it seamlessly
+                context.Token = authHeader.Trim();
+            }
+            return Task.CompletedTask;
+        },
         OnChallenge = async context =>
         {
             context.HandleResponse();
@@ -174,7 +184,7 @@ builder.Services.AddCors(options =>
 //            policy.WithOrigins(
 //                "http://localhost:4200",             // Local Development
 //                "http://localhost:3000",             // Local Development
-//                "https://mariam-perfumes.vercel.app", // Production frontend
+//                "https://mariam-perfumes-next-latest.vercel.app", // Production frontend
 //                "https://e-commerce-six-olive-70.vercel.app", // Old frontend
 //                "https://wallsshop-2.vercel.app",
 //                "https://wallsshop-furniture.com",    // Netlify Deployment
@@ -206,11 +216,12 @@ builder.Services.AddSwaggerGen(c =>
 
     c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
-        Description = "JWT Authorization header using the Bearer scheme. \r\n\r\n Enter 'Bearer' [space] and then your token in the text input below.\r\n\r\nExample: \"Bearer 12345abcdef\"",
+        Description = "Enter your JWT token directly. Swagger will automatically prefix it with 'Bearer '.",
         Name = "Authorization",
         In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT"
     });
 
     c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement()
@@ -222,12 +233,9 @@ builder.Services.AddSwaggerGen(c =>
                 {
                     Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
                     Id = "Bearer"
-                },
-                Scheme = "oauth2",
-                Name = "Bearer",
-                In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+                }
             },
-            new List<string>()
+            Array.Empty<string>()
         }
     });
 });

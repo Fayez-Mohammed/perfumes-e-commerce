@@ -14,8 +14,8 @@ public class FormController(FormRepository repo) : ControllerBase
     /// <param name="form">The form data to submit.</param>
     /// <returns>A success message when the form is saved, otherwise a failure message.</returns>
     [HttpPost("add-form")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(MessageResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageResponseDto), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create([FromBody] FormDto form)
     {
         // التعديل 2: الاعتماد على الـ bool الذي يرجع من الـ Repo مباشرة

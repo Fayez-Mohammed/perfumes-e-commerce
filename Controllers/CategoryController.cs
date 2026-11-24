@@ -10,9 +10,9 @@ public class CategoryController(CategoryRepository repo) : ControllerBase
 {
     /// <summary>Gets the list of categories in the requested language.</summary>
     /// <param name="LanguageCode">The language code used to localize the categories.</param>
-    /// <returns>An object containing the localized categories.</returns>
+    /// <returns>An object containing the localized categories under the response property.</returns>
     [HttpGet("categories")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(List<CategoryResponseDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCategories([FromQuery] string LanguageCode )
     {
         return Ok(new {response = await repo.GetCategories(LanguageCode)});

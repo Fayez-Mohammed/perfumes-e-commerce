@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using WallsShop.DTO;
 using WallsShop.DTO.Dashboard;
 using WallsShop.Repository.Dashboard;
 
@@ -27,7 +28,7 @@ public class DashboardOffersController : ControllerBase
     /// <summary>Retrieves all dashboard offers.</summary>
     /// <returns>A JSON object containing the list of offers; 500 on failure.</returns>
     [HttpGet("GetOffers")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(List<DashboardOfferDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
@@ -50,7 +51,7 @@ public class DashboardOffersController : ControllerBase
     /// <param name="id">The identifier of the offer.</param>
     /// <returns>A JSON object containing the offer; 404 if not found; 500 on failure.</returns>
     [HttpGet("SpecificOffer")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(DashboardOfferDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
@@ -78,7 +79,7 @@ public class DashboardOffersController : ControllerBase
     /// <param name="dto">The offer data, including any uploaded image.</param>
     /// <returns>The created offer as a JSON object; 400 for invalid data or creation failure; 404 if the offer cannot be retrieved afterwards; 500 on failure.</returns>
     [HttpPost]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(DashboardOfferDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
@@ -117,7 +118,7 @@ public class DashboardOffersController : ControllerBase
     /// <param name="dto">The updated offer data, including any uploaded image.</param>
     /// <returns>The updated offer as a JSON object; 400 for invalid data or update failure; 404 if the offer cannot be retrieved afterwards; 500 on failure.</returns>
     [HttpPut("UpdateOffer")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(DashboardOfferDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
@@ -149,7 +150,7 @@ public class DashboardOffersController : ControllerBase
     /// <param name="id">The identifier of the offer to delete.</param>
     /// <returns>A JSON object with a success or failure message; 400 if deletion fails; 500 on failure.</returns>
     [HttpDelete("DeleteOffer")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]

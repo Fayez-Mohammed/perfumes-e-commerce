@@ -33,7 +33,7 @@ public class ReviewController(ReviewRepository repo,UserManager<User> _userManag
     /// </summary>
     /// <param name="productId">The identifier of the product whose reviews are requested.</param>
     /// <returns>An object containing the product's review details under the response property.</returns>
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ReviewResponseDto), StatusCodes.Status200OK)]
     [HttpGet("reviews")]
     public async Task<IActionResult> GetReviews([FromQuery] int productId)
     {
@@ -89,7 +89,7 @@ public class ReviewController(ReviewRepository repo,UserManager<User> _userManag
     /// </summary>
     /// <param name="LanguageCode">The language code used to select the product name (defaults to "ar").</param>
     /// <returns>An object containing all review details under the response property.</returns>
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(List<ReviewResponseDto2>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
     [Authorize(Roles ="Admin")]

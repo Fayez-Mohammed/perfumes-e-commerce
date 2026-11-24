@@ -24,7 +24,7 @@ public class OffersController(
     /// </summary>
     /// <param name="model">The offer data, including the Arabic and English names and descriptions, image, and end date.</param>
     /// <returns>An object confirming the offer was added.</returns>
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
@@ -81,7 +81,7 @@ public class OffersController(
                     </div>
 
                     <div class='btn-wrap'>
-                        <a href='https://mariam-perfumes.vercel.app' class='btn'>تسوق الآن</a>
+                        <a href='https://mariam-perfumes-next-latest.vercel.app' class='btn'>تسوق الآن</a>
                     </div>
                 </div>
                 <div class='footer'>
@@ -135,7 +135,7 @@ public class OffersController(
    /// </summary>
    /// <param name="languageCode">The language code that selects the localized offer content.</param>
    /// <returns>An object containing either the offer list or a default offer under the reponse property.</returns>
-   [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+   [ProducesResponseType(typeof(List<OfferReturnDto>), StatusCodes.Status200OK)]
    [HttpGet("get-offer")]
    public async Task<IActionResult> GetOffers([FromQuery]  string languageCode)
    {
@@ -183,7 +183,7 @@ public class OffersController(
     /// </summary>
     /// <param name="offerId">The identifier of the offer to delete.</param>
     /// <returns>An object confirming the offer was deleted, or an empty result if deletion failed.</returns>
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]

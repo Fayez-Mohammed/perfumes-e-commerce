@@ -24,7 +24,7 @@ public class PaymobSettings
     public string PublicApiUrl { get; set; } = string.Empty;
 
     /// <summary>رابط صفحة النتيجة في الفرونت. {orderId} بيتستبدل برقم الأوردر.</summary>
-    public string RedirectionUrlTemplate { get; set; } = "https://mariam-perfumes.vercel.app/payment-result/{orderId}";
+    public string RedirectionUrlTemplate { get; set; } = "https://mariam-perfumes-next-latest.vercel.app/payment-result/{orderId}";
 }
 
 public static class PaymobMoney

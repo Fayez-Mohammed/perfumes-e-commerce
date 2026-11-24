@@ -22,7 +22,7 @@ public class CartController : ControllerBase
     /// <returns>A success message confirming the item was added.</returns>
     [Authorize]
     [HttpPost("add-item")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     public async   Task<IActionResult> AddToCart([FromBody] CartItem itemDto)
     {
@@ -287,7 +287,7 @@ public class CartController : ControllerBase
     /// <summary>Gets the number of items in the cart of the current (possibly anonymous) user.</summary>
     /// <returns>An object containing the item count.</returns>
     [HttpGet("CountOfItemsInCartForUser")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(CountResponseDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> CountOfItemsInCartForUser()
     {
         var authenticatedUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;

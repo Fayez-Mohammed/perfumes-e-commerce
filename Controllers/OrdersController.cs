@@ -43,9 +43,9 @@ public class OrdersController : ControllerBase
     /// <param name="dto">Order details supplied in the request body.</param>
     /// <param name="LanguageCode">Language code used for localized messages ("ar" for Arabic, otherwise English).</param>
     /// <param name="ct">Cancellation token for the request.</param>
-    /// <returns>An anonymous object with the order id, payment method, whether payment is required and the checkout URL; or an error message.</returns>
+    /// <returns>An order creation result including order id, payment method, requires payment flag, and checkout URL.</returns>
     [HttpPost("MakeOrder")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(OrderCreateResultDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]

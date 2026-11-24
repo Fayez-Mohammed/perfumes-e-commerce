@@ -89,7 +89,7 @@ public class DashBoardController : ControllerBase
     /// <summary>Gets aggregate dashboard statistics (products, categories, offers, users, orders and sales).</summary>
     /// <returns>A JSON object containing a success flag and the dashboard summary data; 500 on failure.</returns>
     [HttpGet("summary")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(DashboardSummaryDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
@@ -132,7 +132,7 @@ public class DashBoardController : ControllerBase
     /// <param name="request">The multipart form data containing the product JSON and image files.</param>
     /// <returns>A JSON object with a success or failure message; 400 if the request data is invalid.</returns>
     [HttpPost("add-product")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
@@ -157,7 +157,7 @@ public class DashBoardController : ControllerBase
     /// <param name="id">The identifier of the product to delete.</param>
     /// <returns>A JSON object with a success or failure message; 400 if the identifier is invalid or deletion fails.</returns>
     [HttpDelete("delete-product")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
@@ -178,7 +178,7 @@ public class DashBoardController : ControllerBase
     /// <param name="LanguageCode">Language code ("ar" or "en") used to localize status labels and messages.</param>
     /// <returns>A JSON object with the customer list; 404 if no customers exist; 500 on failure.</returns>
     [HttpGet("GetAllCustomers")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(List<CustomerreturnDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
@@ -223,7 +223,7 @@ public class DashBoardController : ControllerBase
     /// <param name="id">The identifier of the customer to delete.</param>
     /// <returns>A JSON object with a success or failure message; 400 if the identifier is invalid or deletion fails; 404 if the customer is not found.</returns>
     [HttpDelete("DeleteCustomer")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
@@ -257,7 +257,7 @@ public class DashBoardController : ControllerBase
     /// <param name="LanguageCode">Language code ("ar" or "en") used to localize the response message.</param>
     /// <returns>A JSON object with a success or failure message; 400 if the update fails.</returns>
     [HttpPut("update-product")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
@@ -281,7 +281,7 @@ public class DashBoardController : ControllerBase
     /// <returns>A JSON object with a confirmation message; 400 if the user cannot be blocked; 404 if the user is not found.</returns>
     [Authorize(Roles = "Admin")]
     [HttpPut("BlockUser")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
@@ -307,7 +307,7 @@ public class DashBoardController : ControllerBase
     /// <returns>A JSON object with a confirmation message; 404 if the user is not found.</returns>
     [Authorize(Roles = "Admin")]
     [HttpPut("UnBlockUser")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
@@ -324,7 +324,7 @@ public class DashBoardController : ControllerBase
     /// <returns>A JSON object with the resulting block status message; 400 if the user cannot be modified; 404 if the user is not found.</returns>
     [Authorize(Roles = "Admin")]
     [HttpPut("ToggleBlock")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
@@ -354,7 +354,7 @@ public class DashBoardController : ControllerBase
     /// <param name="queryParameters">Query parameters including the product id and language options.</param>
     /// <returns>A JSON object containing the product data; 400 if the id is invalid; 404 if the product is not found.</returns>
     [HttpGet("GetProductForEdit")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(List<ProductENARDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
@@ -378,7 +378,7 @@ public class DashBoardController : ControllerBase
     /// <param name="LanguageCode">Language code ("ar" or "en") used to localize messages and status labels.</param>
     /// <returns>A JSON object containing the created admin; 400 for invalid data or creation failure; 401 if the caller is not the primary administrator.</returns>
     [HttpPost("AddAdmin")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(adminreturnDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
@@ -487,7 +487,7 @@ public async Task<IActionResult> DownloadOrdersXml([FromQuery] string LanguageCo
     /// <param name="id">The identifier of the order to confirm.</param>
     /// <returns>A JSON object with a confirmation message; 400 if the order is not paid; 404 if the order is not found.</returns>
     [HttpPut("ConfirmOrder")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
@@ -507,7 +507,7 @@ public async Task<IActionResult> DownloadOrdersXml([FromQuery] string LanguageCo
     /// <param name="id">The identifier of the order to cancel.</param>
     /// <returns>A JSON object with a cancellation message; 404 if the order is not found.</returns>
     [HttpPut("CancelOrder")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
@@ -525,7 +525,7 @@ public async Task<IActionResult> DownloadOrdersXml([FromQuery] string LanguageCo
     /// <param name="id">The identifier of the order to delete.</param>
     /// <returns>A JSON object with a deletion message; 404 if the order is not found.</returns>
     [HttpDelete("Delete-Order")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
@@ -557,9 +557,9 @@ public async Task<IActionResult> DownloadOrdersXml([FromQuery] string LanguageCo
     }
     /// <summary>Retrieves a paged list of products for the dashboard, using the translated or Arabic overview based on language.</summary>
     /// <param name="queryParameters">Query parameters including paging, filtering and language options.</param>
-    /// <returns>A JSON object containing the product overview list.</returns>
+    /// <returns>A JSON object containing the product overview list under Response property.</returns>
     [HttpGet("productsForDashboard")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResult<ProductOverviewForDashboardDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetProducts

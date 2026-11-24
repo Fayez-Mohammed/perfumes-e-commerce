@@ -55,7 +55,7 @@ public class AccountController : ControllerBase
     /// <param name="LanguageCode">Language code used for localized responses ("en" or "ar").</param>
     /// <returns>A confirmation message together with the encoded email confirmation token.</returns>
     [HttpPost("register")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Register([FromBody] RegisterDto model, [FromQuery] string LanguageCode = "en")
     {
@@ -73,7 +73,7 @@ public class AccountController : ControllerBase
         var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
 
        
-        var frontendUrl = "https://mariam-perfumes.vercel.app";
+        var frontendUrl = "https://mariam-perfumes-next-latest.vercel.app";
         var callbackUrl = $"{frontendUrl}?token={encodedToken}&email={user.Email}";
 
         //await _emailService.SendEmailAsync(user.Email, "Confirm your email",
@@ -205,7 +205,7 @@ var htmlMessage = $@"
     /// <param name="LanguageCode">Language code used for localized responses ("en" or "ar").</param>
     /// <returns>A localized confirmation message indicating the verification result.</returns>
     [HttpPost("confirm-email")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailDto model, [FromQuery] string LanguageCode = "en")
@@ -246,9 +246,9 @@ var htmlMessage = $@"
     /// </summary>
     /// <param name="loginDto">Login credentials, plus optional guest cart and wishlist items to merge.</param>
     /// <param name="LanguageCode">Language code used for localized responses ("en" or "ar").</param>
-    /// <returns>The user's email and generated JWT token.</returns>
+    /// <returns>The user's email and generated JWT token under AuthResponseDto.</returns>
     [HttpPost("login")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login([FromBody] LoginDto loginDto, [FromQuery] string LanguageCode="en")
     {
@@ -302,7 +302,7 @@ var htmlMessage = $@"
     /// </summary>
     /// <returns>A confirmation message indicating the user has logged out.</returns>
     [HttpPost("logout")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageResponseDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> Logout()
     {
         await _signInManager.SignOutAsync();
@@ -312,10 +312,10 @@ var htmlMessage = $@"
     /// <summary>
     /// Gets the profile information of the currently authenticated user.
     /// </summary>
-    /// <returns>The user's name, email, phone number and roles.</returns>
+    /// <returns>The user's name, email, phone number and roles under CurrentUserDto.</returns>
     [Authorize]
     [HttpGet("user-info")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(CurrentUserDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetCurrentUser()
@@ -355,7 +355,7 @@ var htmlMessage = $@"
     /// <returns>A localized success message or validation errors.</returns>
     [Authorize]
     [HttpPut("update-user-info")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
@@ -381,7 +381,7 @@ var htmlMessage = $@"
     /// <returns>A localized success message, or an error if the old password is incorrect.</returns>
     [Authorize]
     [HttpPost("change-password")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest model, [FromQuery] string LanguageCode = "en")
@@ -413,7 +413,7 @@ var htmlMessage = $@"
     /// <param name="LanguageCode">Language code used for localized responses ("en" or "ar").</param>
     /// <returns>A localized message indicating that an OTP was sent (or a generic message if the email does not exist).</returns>
     [HttpPost("forgot-password")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageResponseDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgetPasswordDto model, [FromQuery] string LanguageCode = "en")
     {
         var user = await _userManager.FindByEmailAsync(model.Email);
@@ -433,9 +433,9 @@ var htmlMessage = $@"
     /// </summary>
     /// <param name="model">The email address and the OTP code to verify.</param>
     /// <param name="LanguageCode">Language code used for localized responses ("en" or "ar").</param>
-    /// <returns>A localized verification message and the password reset token.</returns>
+    /// <returns>A localized verification message and the password reset token under VerifyOtpResponseDto.</returns>
     [HttpPost("verify-otp")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(VerifyOtpResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> VerifyOtp([FromBody] VerifyOtpRequest model, [FromQuery] string LanguageCode = "en")
     {
@@ -461,7 +461,7 @@ var htmlMessage = $@"
     /// <param name="LanguageCode">Language code used for localized responses ("en" or "ar").</param>
     /// <returns>A localized message indicating that a new OTP was sent (or a generic message if the email does not exist).</returns>
     [HttpPost("resend-otp")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageResponseDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> ResendOtp([FromBody] ResendOtpRequest model, [FromQuery] string LanguageCode = "en")
     {
         var user = await _userManager.FindByEmailAsync(model.Email);
@@ -481,7 +481,7 @@ var htmlMessage = $@"
     /// <param name="LanguageCode">Language code used for localized responses ("en" or "ar").</param>
     /// <returns>A localized success message or the password reset validation errors.</returns>
     [HttpPost("reset-password")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest model, [FromQuery] string LanguageCode = "en")
     {

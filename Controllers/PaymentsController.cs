@@ -6,6 +6,7 @@ using System.Globalization;
 using System.Security.Claims;
 using System.Text.Json;
 using WallsShop.Context;
+using WallsShop.DTO;
 using WallsShop.Services;
 
 namespace WallsShop.Controllers;
@@ -229,22 +230,21 @@ public class PaymentsController : ControllerBase
     private string BuildResultUrl(int orderId)
     {
         var template = string.IsNullOrWhiteSpace(_settings.RedirectionUrlTemplate)
-            ? "https://mariam-perfumes.vercel.app/payment-result/{orderId}"
+            ? "https://mariam-perfumes-next-latest.vercel.app/payment-result/{orderId}"
             : _settings.RedirectionUrlTemplate;
 
         return template.Replace("{orderId}", orderId.ToString(CultureInfo.InvariantCulture));
     }
 
     /// <summary>
-    /// الفرونت بيسأل هنا بعد ما العميل يرجع من Paymob.
-    /// متعتمدش على الـ query params اللي بترجع في الـ redirect: هي مش موثوقة، وممكن توصل قبل الـ webhook (اسأل كام مرة بفاصل ثانيتين).
+    /// Gets the current payment and order status after returning from Paymob.
     /// </summary>
     /// <param name="orderId">Identifier of the order whose payment status is requested.</param>
     /// <param name="ct">Cancellation token for the request.</param>
-    /// <returns>An anonymous object with the order status, payment method, payment status, total amount and paid date; 404 when no matching order belongs to the user.</returns>
+    /// <returns>A PaymentStatusResponseDto containing order status, payment method, payment status, total amount and paid date; 404 when no matching order belongs to the user.</returns>
     [Authorize]
     [HttpGet("status/{orderId:int}")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PaymentStatusResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetPaymentStatus(int orderId, CancellationToken ct)

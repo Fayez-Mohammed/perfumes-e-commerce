@@ -12,8 +12,8 @@ public class ProductController(ProductRepository products , IWebHostEnvironment 
      /// Gets a single product by its identifier, localized according to the requested language. When the user is authenticated, user-specific data (such as wishlist state) is included.
      /// </summary>
      /// <param name="queryParameters">Query parameters including the product id, language code, and paging options.</param>
-     /// <returns>An object containing the requested product under the Response property.</returns>
-     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+     /// <returns>An object containing the requested product under the Response property (PagedResult of ProductResponseDto for Arabic or ProductTranslationDto for English).</returns>
+     [ProducesResponseType(typeof(PagedResult<ProductResponseDto>), StatusCodes.Status200OK)]
      [HttpGet("product")]
      public async Task<IActionResult> GetProductById
           ([FromQuery] QueryParameters queryParameters)
@@ -66,7 +66,7 @@ public class ProductController(ProductRepository products , IWebHostEnvironment 
      /// <param name="queryParameters">Query parameters including paging and language code.</param>
      /// <param name="id">The identifier of the product whose related products are requested.</param>
      /// <returns>An object containing the related product list under the Response property.</returns>
-     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+     [ProducesResponseType(typeof(PagedResult<ProductOverviewDto>), StatusCodes.Status200OK)]
      [HttpGet("related-product")]
      public async Task<IActionResult> GetRelatedProducts
           ([FromQuery] QueryParameters queryParameters , [FromQuery] int id )
@@ -97,7 +97,7 @@ public class ProductController(ProductRepository products , IWebHostEnvironment 
      /// </summary>
      /// <param name="queryParameters">Query parameters including paging and language code.</param>
      /// <returns>An object containing the recent products under the Response property.</returns>
-     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+     [ProducesResponseType(typeof(List<ProductOverviewDto>), StatusCodes.Status200OK)]
      [HttpGet("top-recent-product")]
      public async Task<IActionResult> GetTopRecentProducts
           ([FromQuery] QueryParameters queryParameters)
@@ -124,7 +124,7 @@ public class ProductController(ProductRepository products , IWebHostEnvironment 
      /// </summary>
      /// <param name="queryParameters">Query parameters including paging and language code.</param>
      /// <returns>An object containing the top-rated products under the Response property.</returns>
-     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+     [ProducesResponseType(typeof(List<ProductOverviewDto>), StatusCodes.Status200OK)]
      [HttpGet("top-rated-product")]
      public async Task<IActionResult> GetTopRatedProducts
           ([FromQuery] QueryParameters queryParameters)

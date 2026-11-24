@@ -11,7 +11,7 @@ namespace WallsShop.Controllers;
 public class SitemapController(WallShopContext ctx) : ControllerBase
 {
     // رابط الواجهة الأمامية (Angular)
-    private readonly string _frontendUrl = "https://mariam-perfumes.vercel.app";
+    private readonly string _frontendUrl = "https://mariam-perfumes-next-latest.vercel.app";
 
     /// <summary>
     /// Generates the XML sitemap containing the frontend base pages and product pages with hreflang alternates.
