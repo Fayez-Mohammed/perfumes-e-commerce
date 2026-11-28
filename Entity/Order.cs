@@ -15,7 +15,7 @@ public class Order
     public virtual User? Customers { get; set; }
     public DateTime OrderDate { get; set; } = DateTime.UtcNow;
 
-    /// <summary>Pending | Confirmed | Canceled | AwaitingPayment (أوردر أونلاين لسه مدفعش)</summary>
+    /// <summary>Pending | Confirmed | Shipped | Delivered | Canceled | AwaitingPayment (أوردر أونلاين لسه مدفعش)</summary>
     [MaxLength(30)]
     public string Status { get; set; } = "Pending";
 

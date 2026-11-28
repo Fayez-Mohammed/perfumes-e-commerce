@@ -102,7 +102,9 @@ public class DashBoardController : ControllerBase
             var totalOffers = await _offerRepository.GetTotalOffersCount();
             var totalUsers = await _userManager.Users.CountAsync();
             var totalOrders = await _context.Orders.CountAsync(o => o.Status != "AwaitingPayment");
-            var totalSales = await _context.Orders.Where(o=>o.Status=="Confirmed").SumAsync(o => o.TotalAmount);
+            var totalSales = await _context.Orders
+                .Where(o => o.Status == "Confirmed" || o.Status == "Shipped" || o.Status == "Delivered")
+                .SumAsync(o => o.TotalAmount);
             var summary = new DashboardSummaryDto
             {
                 TotalProducts = totalProducts,
@@ -409,11 +411,11 @@ public class DashBoardController : ControllerBase
             Email = model.Email,
             Name = model.Name,
             PhoneNumber = model.PhoneNumber,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            EmailConfirmed = true
             
         };
         var result = await _userManager.CreateAsync(user, model.Password);
-        user.EmailConfirmed = true;
         if (result.Succeeded)
         {
             await _userManager.AddToRoleAsync(user, "Admin");
@@ -520,6 +522,62 @@ public async Task<IActionResult> DownloadOrdersXml([FromQuery] string LanguageCo
 
         return Ok(new { message = "Order Canceld successfully" });
     }
+
+    /// <summary>Marks an order as shipped.</summary>
+    /// <param name="id">The identifier of the order to mark as shipped.</param>
+    /// <returns>A JSON object with a confirmation message; 400 if unpaid or invalid transition; 404 if not found.</returns>
+    [HttpPut("ShipOrder")]
+    [ProducesResponseType(typeof(MessageResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ShipOrder([FromQuery] int id)
+    {
+        var result = await _orderRepo.UpdateOrderStatusAsync(id, "Shipped");
+        return MapOrderStatusUpdateResult(result, "Order Shipped successfully");
+    }
+
+    /// <summary>Marks an order as delivered (and marks COD orders as paid).</summary>
+    /// <param name="id">The identifier of the order to mark as delivered.</param>
+    /// <returns>A JSON object with a confirmation message; 400 if unpaid or invalid transition; 404 if not found.</returns>
+    [HttpPut("DeliverOrder")]
+    [ProducesResponseType(typeof(MessageResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeliverOrder([FromQuery] int id)
+    {
+        var result = await _orderRepo.UpdateOrderStatusAsync(id, "Delivered");
+        return MapOrderStatusUpdateResult(result, "Order Delivered successfully");
+    }
+
+    /// <summary>Updates an order's status to any valid workflow stage (Pending, Confirmed, Shipped, Delivered, Canceled).</summary>
+    /// <param name="id">The identifier of the order to update.</param>
+    /// <param name="status">The target order status.</param>
+    /// <returns>A JSON object with a confirmation message; 400 if status/transition is invalid or order is unpaid; 404 if not found.</returns>
+    [HttpPut("UpdateOrderStatus")]
+    [ProducesResponseType(typeof(MessageResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateOrderStatus([FromQuery] int id, [FromQuery] string status)
+    {
+        var result = await _orderRepo.UpdateOrderStatusAsync(id, status);
+        return MapOrderStatusUpdateResult(result, $"Order status updated to {status} successfully");
+    }
+
+    private IActionResult MapOrderStatusUpdateResult(OrderStatusUpdateResult result, string successMessage) =>
+        result switch
+        {
+            OrderStatusUpdateResult.NotFound => NotFound("Order not found"),
+            OrderStatusUpdateResult.NotPaid => BadRequest(new { message = "Order is not paid yet" }),
+            OrderStatusUpdateResult.InvalidTransition => BadRequest(new { message = "Cannot transition a canceled order to this status" }),
+            OrderStatusUpdateResult.InvalidStatus => BadRequest(new { message = "Invalid order status" }),
+            _ => Ok(new { message = successMessage })
+        };
 
     /// <summary>Deletes an order.</summary>
     /// <param name="id">The identifier of the order to delete.</param>

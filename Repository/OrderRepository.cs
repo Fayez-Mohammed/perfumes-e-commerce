@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using WallsShop.Context;
 using WallsShop.DTO;
+using WallsShop.Entity;
 using WallsShop.Properties.Entity;
 using WallsShop.Services;
 
@@ -28,7 +29,14 @@ public class OrderRepository(WallShopContext ctx, IServiceScopeFactory scopeFact
                 ItemsCount = o.OrderDetailsList.Count,
 
                 TotalPrice = o.TotalAmount,
-                Status = LanguageCode == "ar" ? (o.Status == "Confirmed" ? "مؤكد" : o.Status == "Pending" ? "معلق" : o.Status == "AwaitingPayment" ? "في انتظار الدفع" : "ملغي") : o.Status,
+                Status = LanguageCode == "ar"
+                    ? (o.Status == "Confirmed" ? "مؤكد"
+                        : o.Status == "Pending" ? "معلق"
+                        : o.Status == "Shipped" ? "تم الشحن"
+                        : o.Status == "Delivered" ? "تم التوصيل"
+                        : o.Status == "AwaitingPayment" ? "في انتظار الدفع"
+                        : "ملغي")
+                    : o.Status,
                 Note=o.Note,
                 PaymentMethod = o.PaymentMethod ?? "COD",
                 PaymentStatus = o.PaymentStatus ?? "Unpaid",
@@ -265,8 +273,172 @@ public class OrderRepository(WallShopContext ctx, IServiceScopeFactory scopeFact
         {
             "Confirmed" => "مؤكد",
             "Pending" => "معلق",
+            "Shipped" => "تم الشحن",
+            "Delivered" => "تم التوصيل",
             "AwaitingPayment" => "في انتظار الدفع",
             _ => "ملغي"
+        };
+    }
+
+    private static string TranslatePaymentStatus(string? paymentStatus, bool isArabic)
+    {
+        var normalized = string.IsNullOrWhiteSpace(paymentStatus) ? "Unpaid" : paymentStatus;
+        if (!isArabic) return normalized;
+
+        return normalized switch
+        {
+            "Paid" => "مدفوع",
+            "Unpaid" => "غير مدفوع",
+            "Pending" => "قيد المعالجة",
+            "Failed" => "فشل الدفع",
+            "Refunded" => "تم الاسترجاع",
+            "Voided" => "ملغي",
+            _ => normalized
+        };
+    }
+
+    public async Task<List<UserOrderDto>> GetUserOrdersAsync(
+        string userId,
+        string languageCode = "ar",
+        CancellationToken ct = default)
+    {
+        bool isArabic = languageCode.Equals("ar", StringComparison.OrdinalIgnoreCase);
+
+        var orders = await BuildUserOrderQuery()
+            .Where(o => o.UserId == userId)
+            .OrderByDescending(o => o.OrderDate)
+            .ToListAsync(ct);
+
+        return orders.Select(o => MapToUserOrderDto(o, isArabic)).ToList();
+    }
+
+    public async Task<UserOrderDto?> GetUserOrderDetailsAsync(
+        int orderId,
+        string userId,
+        string languageCode = "ar",
+        CancellationToken ct = default)
+    {
+        bool isArabic = languageCode.Equals("ar", StringComparison.OrdinalIgnoreCase);
+
+        var order = await BuildUserOrderQuery()
+            .FirstOrDefaultAsync(o => o.Id == orderId && o.UserId == userId, ct);
+
+        return order == null ? null : MapToUserOrderDto(order, isArabic);
+    }
+
+    private IQueryable<Order> BuildUserOrderQuery() =>
+        ctx.Orders
+            .AsNoTracking()
+            .AsSplitQuery()
+            .Include(o => o.OrderDetailsList).ThenInclude(od => od.Variant)
+            .Include(o => o.OrderDetailsList).ThenInclude(od => od.Product).ThenInclude(p => p.Images)
+            .Include(o => o.OrderDetailsList).ThenInclude(od => od.Product).ThenInclude(p => p.NewProductColors).ThenInclude(npc => npc.Color);
+
+    private static UserOrderDto MapToUserOrderDto(Order order, bool isArabic)
+    {
+        var paymentMethod = order.PaymentMethod ?? "COD";
+        var paymentStatus = order.PaymentStatus ?? "Unpaid";
+        var items = order.OrderDetailsList?.Select(od =>
+        {
+            var images = od.Product?.Images?.Select(i => i.RelativePath).ToList() ?? new List<string>();
+            return new UserOrderItemDto
+            {
+                ProductId = od.ProductId,
+                ProductName = isArabic ? od.ProductName : (od.Product?.NameEN ?? od.ProductName),
+                ImageUrl = images.FirstOrDefault(),
+                Images = images,
+                VariantId = od.VariantId,
+                Type = isArabic ? od.Variant?.Type : od.Variant?.EnglishType,
+                Size = isArabic ? od.Variant?.Size : od.Variant?.EnglishSize,
+                Color = ResolveItemColor(od, isArabic),
+                Price = od.Price,
+                Quantity = od.Quantity,
+                LineTotal = od.Price * od.Quantity
+            };
+        }).ToList() ?? new List<UserOrderItemDto>();
+
+        return new UserOrderDto
+        {
+            Id = order.Id,
+            OrderDate = order.OrderDate,
+            TotalAmount = order.TotalAmount,
+            Status = order.Status,
+            StatusLabel = TranslateStatus(order.Status, isArabic),
+            PaymentMethod = paymentMethod,
+            PaymentStatus = paymentStatus,
+            PaymentStatusLabel = TranslatePaymentStatus(paymentStatus, isArabic),
+            PaidAt = order.PaidAt,
+            ReceiverName = order.ReceiverName,
+            ReceiverPhone = order.ReceiverPhone,
+            ShippingAddress = order.ShippingAddress,
+            Note = order.Note,
+            ItemsCount = items.Count,
+            Items = items
+        };
+    }
+
+    private static string? ResolveItemColor(OrderDetails od, bool isArabic)
+    {
+        if (string.IsNullOrWhiteSpace(od.Color) || isArabic)
+            return od.Color;
+
+        var matched = od.Product?.NewProductColors?
+            .FirstOrDefault(npc => npc.Color != null &&
+                ((npc.Color.ColorName != null && string.Equals(npc.Color.ColorName, od.Color, StringComparison.OrdinalIgnoreCase)) ||
+                 (npc.Color.EnglishColor != null && string.Equals(npc.Color.EnglishColor, od.Color, StringComparison.OrdinalIgnoreCase))));
+
+        return matched?.Color?.EnglishColor ?? od.Color;
+    }
+
+    public async Task<OrderStatusUpdateResult> UpdateOrderStatusAsync(int orderId, string newStatus)
+    {
+        var canonicalStatus = NormalizeOrderStatus(newStatus);
+        if (canonicalStatus == null)
+            return OrderStatusUpdateResult.InvalidStatus;
+
+        var order = await ctx.Orders.FirstOrDefaultAsync(o => o.Id == orderId);
+        if (order == null)
+            return OrderStatusUpdateResult.NotFound;
+
+        bool isOnline = order.PaymentMethod == "Card" || order.PaymentMethod == "Wallet";
+        bool targetsFulfillment = canonicalStatus is "Confirmed" or "Shipped" or "Delivered";
+
+        if (isOnline && order.PaymentStatus != "Paid" && targetsFulfillment)
+            return OrderStatusUpdateResult.NotPaid;
+
+        if (order.Status == "Canceled" && targetsFulfillment)
+            return OrderStatusUpdateResult.InvalidTransition;
+
+        bool newlyConfirmed = canonicalStatus == "Confirmed" && order.Status != "Confirmed";
+
+        if (canonicalStatus == "Delivered" &&
+            (order.PaymentMethod == null || order.PaymentMethod == "COD") &&
+            order.PaymentStatus != "Paid")
+        {
+            order.PaymentStatus = "Paid";
+            order.PaidAt = DateTime.UtcNow;
+        }
+
+        order.Status = canonicalStatus;
+        await ctx.SaveChangesAsync();
+
+        if (newlyConfirmed)
+            NotifyCustomerInBackground(order.Id, order.UserId, order.ReceiverName, order.TotalAmount);
+
+        return OrderStatusUpdateResult.Ok;
+    }
+
+    private static string? NormalizeOrderStatus(string? status)
+    {
+        if (string.IsNullOrWhiteSpace(status)) return null;
+        return status.Trim().ToLowerInvariant() switch
+        {
+            "pending" => "Pending",
+            "confirmed" => "Confirmed",
+            "shipped" => "Shipped",
+            "delivered" => "Delivered",
+            "canceled" => "Canceled",
+            _ => null
         };
     }
 
@@ -333,4 +505,13 @@ public enum ConfirmOrderResult
     Ok,
     NotFound,
     NotPaid
+}
+
+public enum OrderStatusUpdateResult
+{
+    Ok,
+    NotFound,
+    NotPaid,
+    InvalidTransition,
+    InvalidStatus
 }

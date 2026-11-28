@@ -75,14 +75,20 @@ public class ReviewController(ReviewRepository repo,UserManager<User> _userManag
     [ProducesResponseType(typeof(ReviewResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
     [Authorize]
     [HttpDelete("delete-review")]
     public async Task<IActionResult> DeleteReview([FromQuery] int id, [FromQuery] string LanguageCode = "en")
     {
-        var result = await repo.DeleteReview(id,User,_userManager);
-        if (result==null)
-            return BadRequest(new { message = LanguageCode == "ar" ? "حدث خطأ ما" : "Some thing wrong happend" });
-        return Ok(result);
+        var (status, result) = await repo.DeleteReview(id, User, _userManager);
+        return status switch
+        {
+            DeleteReviewStatus.NotFound => NotFound(new { message = LanguageCode == "ar" ? "المراجعة غير موجودة" : "Review not found" }),
+            DeleteReviewStatus.Forbidden => Forbid(),
+            DeleteReviewStatus.Error => BadRequest(new { message = LanguageCode == "ar" ? "حدث خطأ ما" : "Some thing wrong happend" }),
+            _ => Ok(result)
+        };
     }
     /// <summary>
     /// Gets all reviews with user and product details for administrative management.
@@ -100,6 +106,20 @@ public class ReviewController(ReviewRepository repo,UserManager<User> _userManag
 
         var reviews = await repo.GetAllReviewsWithDetailsAsync(LanguageCode);
 
+        return Ok(new { response = reviews });
+    }
+
+    /// <summary>
+    /// Gets the top 10 highest-rated (and most recent) reviews across all products. Accessible to both authenticated and anonymous users.
+    /// </summary>
+    /// <param name="LanguageCode">The language code used to localize the product name ("en" or "ar", defaults to "en").</param>
+    /// <returns>An object containing the top 10 reviews under the response property.</returns>
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(List<PublicReviewDto>), StatusCodes.Status200OK)]
+    [HttpGet("top-reviews")]
+    public async Task<IActionResult> GetTop10Reviews([FromQuery] string LanguageCode = "en")
+    {
+        var reviews = await repo.GetTop10ReviewsAsync(LanguageCode);
         return Ok(new { response = reviews });
     }
 }

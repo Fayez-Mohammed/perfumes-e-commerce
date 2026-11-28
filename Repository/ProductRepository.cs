@@ -191,7 +191,10 @@ public class ProductRepository(WallShopContext ctx)
         {
 
             var translatedProductIds = await ctx.Products
-                .Where(t => t.Name.Contains(queryParameters.search) || t.DescriptionsEN.Contains(queryParameters.search))
+                .Where(t => (t.NameEN != null && t.NameEN.Contains(queryParameters.search)) ||
+                            (t.DescriptionsEN != null && t.DescriptionsEN.Contains(queryParameters.search)) ||
+                            (t.Name != null && t.Name.Contains(queryParameters.search)) ||
+                            t.Descriptions.Contains(queryParameters.search))
                 .Select(t => t.Id)
                 .ToListAsync();
             query = query.Where(a => translatedProductIds.Contains(a.Id));
@@ -212,7 +215,7 @@ public class ProductRepository(WallShopContext ctx)
         if (!string.IsNullOrEmpty(queryParameters.category))
         {
             var cat = queryParameters.category.ToLower();
-            query = query.Where(a => a.CategoryImage.Category.ToLower() == cat);
+            query = query.Where(a => a.CategoryImage.CategoryValue.ToLower() == cat);
             var category = await ctx.CategoryImages.FirstOrDefaultAsync(c => c.CategoryValue.ToLower() == cat);
             if (category != null)
             {
@@ -650,7 +653,10 @@ public class ProductRepository(WallShopContext ctx)
         {
             
                 var translatedProductIds = await ctx.Products
-                    .Where(t => t.Name.Contains(queryParameters.search) || t.DescriptionsEN.Contains(queryParameters.search))
+                    .Where(t => (t.NameEN != null && t.NameEN.Contains(queryParameters.search)) ||
+                                (t.DescriptionsEN != null && t.DescriptionsEN.Contains(queryParameters.search)) ||
+                                (t.Name != null && t.Name.Contains(queryParameters.search)) ||
+                                t.Descriptions.Contains(queryParameters.search))
                     .Select(t => t.Id)
                     .ToListAsync();
                 query = query.Where(a => translatedProductIds.Contains(a.Id));
@@ -671,7 +677,7 @@ public class ProductRepository(WallShopContext ctx)
         if (!string.IsNullOrEmpty(queryParameters.category))
         {
             var cat = queryParameters.category.ToLower();
-            query = query.Where(a => a.CategoryImage.Category.ToLower() == cat);
+            query = query.Where(a => a.CategoryImage.CategoryValue.ToLower() == cat);
             var category = await ctx.CategoryImages.FirstOrDefaultAsync(c => c.CategoryValue.ToLower() == cat);
             if (category != null)
             {
@@ -1632,10 +1638,10 @@ public class ProductRepository(WallShopContext ctx)
     // Helper Method
     private async Task<int> GetOrCreateColorId(string colorEN, string colorAR)
     {
-        var existingColor = await ctx.Colors
+        var existingColor = await ctx.ColorEntities
             .FirstOrDefaultAsync(c =>
-                c.EnglishColor.ToLower() == colorEN.ToLower() ||
-                c.Color.ToLower() == colorAR.ToLower());
+                (c.EnglishColor != null && c.EnglishColor.ToLower() == colorEN.ToLower()) ||
+                c.ColorName.ToLower() == colorAR.ToLower());
 
         if (existingColor != null)
             return existingColor.Id;

@@ -23,10 +23,16 @@ public class CartController : ControllerBase
     [Authorize]
     [HttpPost("add-item")]
     [ProducesResponseType(typeof(MessageResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     public async   Task<IActionResult> AddToCart([FromBody] CartItem itemDto)
     {
+        if (itemDto.Quantity <= 0)
+            return BadRequest(new { Message = "Quantity must be greater than 0" });
+
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
         await _cartService.AddToCart(userId, itemDto);
        
         return Ok(new { Message = "Item added to cart successfully" });
@@ -292,12 +298,10 @@ public class CartController : ControllerBase
     {
         var authenticatedUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
-        int count = 0;
+        if (string.IsNullOrEmpty(authenticatedUserId))
+            return Ok(new { Count = 0 });
 
-       
-        count = await _cartService.GetCartItemsCount(authenticatedUserId, "ar");
-        
-
+        int count = await _cartService.GetCartItemsCount(authenticatedUserId, "ar");
 
         return Ok(new { Count = count });
     }

@@ -39,6 +39,7 @@ public class WallShopContext : IdentityDbContext<User>
     public DbSet<CategoryImage> CategoryImages { get; set; }
     public DbSet<NewProductColor> NewProductColors { get; set; }
     public DbSet<Color> ColorEntities { get; set; }
+    public DbSet<Video> Videos { get; set; }
     protected override void OnModelCreating(ModelBuilder mb)
 {
     base.OnModelCreating(mb);

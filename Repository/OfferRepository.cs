@@ -10,8 +10,13 @@ public class OfferRepository(WallShopContext ctx, IWebHostEnvironment env, IConf
 
     public async Task<bool> AddOffer(AddOfferDto dto)
     {
-        var Category = await ctx.CategoryImages
-            .FirstOrDefaultAsync(c => c.CategoryValue == dto.CateogryValue.Replace(" ", "-"));
+        CategoryImage? Category = null;
+        if (!string.IsNullOrWhiteSpace(dto.CateogryValue))
+        {
+            var normalizedCategory = dto.CateogryValue.Replace(" ", "-").ToLower();
+            Category = await ctx.CategoryImages
+                .FirstOrDefaultAsync(c => c.CategoryValue.ToLower() == normalizedCategory);
+        }
         Offer offer = new Offer
         {
             Name = dto.Name,
@@ -77,14 +82,14 @@ public class OfferRepository(WallShopContext ctx, IWebHostEnvironment env, IConf
     //        return offers;
     //    }
     //}
-    public async Task<List<OfferReturnDto>> GetOffers(string languageCode)
+    public async Task<List<OfferReturnDto>> GetOffers(string languageCode = "ar")
     {
         var today = DateOnly.FromDateTime(DateTime.Now);
 
         var query = ctx.Offers.Include(o => o.CategoryImage)
             .Where(o => o.IsActive == true && o.EndDate >= today);
 
-        if (languageCode.ToLower() == "en")
+        if (string.Equals(languageCode, "en", StringComparison.OrdinalIgnoreCase))
         {
             return await query.Select(a => new OfferReturnDto
             {
@@ -92,7 +97,7 @@ public class OfferRepository(WallShopContext ctx, IWebHostEnvironment env, IConf
                 Description = a.Description,
                 Name = a.Name,
                 CategoryEN = a.CategoryImage != null ? a.CategoryImage.CategoryValue : null,
-                CategoryValue = a.CategoryImage.CategoryValue,
+                CategoryValue = a.CategoryImage != null ? a.CategoryImage.CategoryValue : string.Empty,
                 ImageUrl = a.ImageUrl, 
                 EndDate = a.EndDate    
             }).ToListAsync();
@@ -107,7 +112,7 @@ public class OfferRepository(WallShopContext ctx, IWebHostEnvironment env, IConf
                 Name = a.ArabicName,
                 CategoryAR = a.CategoryImage != null ? a.CategoryImage.Category : null,
 
-                CategoryValue = a.CategoryImage.CategoryValue,
+                CategoryValue = a.CategoryImage != null ? a.CategoryImage.CategoryValue : string.Empty,
                 ImageUrl = a.ImageUrl, // الصورة
                 EndDate = a.EndDate
             }).ToListAsync();

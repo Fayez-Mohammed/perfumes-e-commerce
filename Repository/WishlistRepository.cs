@@ -85,7 +85,7 @@ public class WishlistRepository(WallShopContext ctx )
             {
                 Id = p.Id,
                 Name =LangauageCode=="ar"? p.Name:p.NameEN,
-                Price = p.PriceAfterDiscount,
+                Price = p.Price,
                 PriceAfterDiscount = p.PriceAfterDiscount,
                 ImageUrl = p.Images.Select(i => i.RelativePath).FirstOrDefault() ?? "No image",
                 IsInWishList = true

@@ -88,35 +88,42 @@ public class ReviewRepository(WallShopContext ctx)
         }
     }
 
-    public async Task<ReviewResponseDto> DeleteReview(int id, ClaimsPrincipal User, UserManager<User> _userManager)
+    public async Task<(DeleteReviewStatus Status, ReviewResponseDto? Response)> DeleteReview(int id, ClaimsPrincipal User, UserManager<User> _userManager)
     {
 
         var user = await _userManager.GetUserAsync(User);
+        if (user == null)
+            return (DeleteReviewStatus.Forbidden, null);
+
         bool isadmin = await _userManager.IsInRoleAsync(user, "Admin");
         var review = await ctx.Reviews.FindAsync(id);
             
         if (review == null)
-            return null;
+            return (DeleteReviewStatus.NotFound, null);
+
+        if (review.UserFK != user.Id && !isadmin)
+            return (DeleteReviewStatus.Forbidden, null);
+
         try
         {
-            var product =await  ctx.Products.Where(a => a.Id == review.ProductId).FirstOrDefaultAsync();
+            var product = await ctx.Products.Where(a => a.Id == review.ProductId).FirstOrDefaultAsync();
 
 
             if (product == null)
-                return null;
+                return (DeleteReviewStatus.NotFound, null);
 
             product.TotalRatePeople -= 1;
             product.RatingSum -= review.Rate;
-            product.AverageRate = product.RatingSum / (product.TotalRatePeople > 0 ? product.TotalRatePeople:1);
+            product.AverageRate = product.TotalRatePeople > 0 ? product.RatingSum / product.TotalRatePeople : 0;
             
             ctx.Reviews.Remove(review);
             await ctx.SaveChangesAsync();
             var res = await GetProductReviews(review.ProductId, user.Id, isadmin);
-            return res;
+            return (DeleteReviewStatus.Success, res);
         }
         catch (Exception ex)
         {
-            return null;
+            return (DeleteReviewStatus.Error, null);
         }
     }
     // 3.2 out of 132 person 
@@ -194,4 +201,37 @@ public class ReviewRepository(WallShopContext ctx)
 
         return await query.AsNoTracking().ToListAsync();
     }
+
+    public async Task<List<PublicReviewDto>> GetTop10ReviewsAsync(string languageCode = "en")
+    {
+        bool isArabic = languageCode.Equals("ar", StringComparison.OrdinalIgnoreCase);
+
+        var query = from r in ctx.Reviews
+                    join u in ctx.Users on r.UserFK equals u.Id
+                    join p in ctx.Products on r.ProductId equals p.Id
+                    orderby r.Rate descending, r.ReviewDate descending
+                    select new PublicReviewDto
+                    {
+                        Id = r.Id,
+                        UserName = u.Name ?? r.UserName,
+                        Comment = r.Comment,
+                        ProductId = p.Id,
+                        ProductName = isArabic ? p.Name : p.NameEN,
+                        ProductPrice = p.Price,
+                        ProductPriceAfterDiscount = p.PriceAfterDiscount,
+                        ProductImageUrl = p.Images.Select(i => i.RelativePath).FirstOrDefault(),
+                        ReviewDate = r.ReviewDate,
+                        Rate = r.Rate
+                    };
+
+        return await query.AsNoTracking().Take(10).ToListAsync();
+    }
+}
+
+public enum DeleteReviewStatus
+{
+    Success,
+    NotFound,
+    Forbidden,
+    Error
 }

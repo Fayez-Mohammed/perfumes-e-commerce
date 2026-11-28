@@ -204,7 +204,7 @@ namespace WallsShop.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("Variants");
+                    b.ToTable("Variants", (string)null);
                 });
 
             modelBuilder.Entity("WallsShop.Entity.CategoryImage", b =>
@@ -229,7 +229,7 @@ namespace WallsShop.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("CategoryImages");
+                    b.ToTable("CategoryImages", (string)null);
                 });
 
             modelBuilder.Entity("WallsShop.Entity.Color", b =>
@@ -249,7 +249,7 @@ namespace WallsShop.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ColorEntities");
+                    b.ToTable("ColorEntities", (string)null);
                 });
 
             modelBuilder.Entity("WallsShop.Entity.Coupon", b =>
@@ -272,7 +272,7 @@ namespace WallsShop.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Coupons");
+                    b.ToTable("Coupons", (string)null);
                 });
 
             modelBuilder.Entity("WallsShop.Entity.Form", b =>
@@ -301,7 +301,7 @@ namespace WallsShop.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Forms");
+                    b.ToTable("Forms", (string)null);
                 });
 
             modelBuilder.Entity("WallsShop.Entity.Image", b =>
@@ -323,7 +323,7 @@ namespace WallsShop.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("Images");
+                    b.ToTable("Images", (string)null);
                 });
 
             modelBuilder.Entity("WallsShop.Entity.NewProductColor", b =>
@@ -338,7 +338,7 @@ namespace WallsShop.Migrations
 
                     b.HasIndex("ColorId");
 
-                    b.ToTable("NewProductColors");
+                    b.ToTable("NewProductColors", (string)null);
                 });
 
             modelBuilder.Entity("WallsShop.Entity.Offer", b =>
@@ -384,7 +384,7 @@ namespace WallsShop.Migrations
 
                     b.HasIndex("CategoryFK");
 
-                    b.ToTable("Offers");
+                    b.ToTable("Offers", (string)null);
                 });
 
             modelBuilder.Entity("WallsShop.Entity.OrderDetails", b =>
@@ -426,7 +426,7 @@ namespace WallsShop.Migrations
 
                     b.HasIndex("VariantId");
 
-                    b.ToTable("OrderDetails");
+                    b.ToTable("OrderDetails", (string)null);
                 });
 
             modelBuilder.Entity("WallsShop.Entity.ProductColor", b =>
@@ -456,7 +456,7 @@ namespace WallsShop.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("Colors");
+                    b.ToTable("Colors", (string)null);
                 });
 
             modelBuilder.Entity("WallsShop.Entity.ProductDescription", b =>
@@ -477,7 +477,7 @@ namespace WallsShop.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("Descriptions");
+                    b.ToTable("Descriptions", (string)null);
                 });
 
             modelBuilder.Entity("WallsShop.Entity.ProductPrice", b =>
@@ -507,7 +507,7 @@ namespace WallsShop.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("ProductPrice");
+                    b.ToTable("ProductPrice", (string)null);
                 });
 
             modelBuilder.Entity("WallsShop.Entity.ProductTranslation2", b =>
@@ -549,7 +549,7 @@ namespace WallsShop.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("ProductTranslations");
+                    b.ToTable("ProductTranslations", (string)null);
                 });
 
             modelBuilder.Entity("WallsShop.Entity.ProductType", b =>
@@ -571,7 +571,7 @@ namespace WallsShop.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("ProductType");
+                    b.ToTable("ProductType", (string)null);
                 });
 
             modelBuilder.Entity("WallsShop.Entity.Review", b =>
@@ -610,7 +610,7 @@ namespace WallsShop.Migrations
 
                     b.HasIndex("UserFK");
 
-                    b.ToTable("Reviews");
+                    b.ToTable("Reviews", (string)null);
                 });
 
             modelBuilder.Entity("WallsShop.Entity.User", b =>
@@ -689,6 +689,36 @@ namespace WallsShop.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("WallsShop.Entity.Video", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CoverImageUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("VideoUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Videos", (string)null);
+                });
+
             modelBuilder.Entity("WallsShop.Entity.Wishlist", b =>
                 {
                     b.Property<int>("Id")
@@ -710,7 +740,7 @@ namespace WallsShop.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Wishlists");
+                    b.ToTable("Wishlists", (string)null);
                 });
 
             modelBuilder.Entity("WallsShop.Properties.Entity.Order", b =>
@@ -776,7 +806,7 @@ namespace WallsShop.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Orders");
+                    b.ToTable("Orders", (string)null);
                 });
 
             modelBuilder.Entity("WallsShop.Properties.Entity.Product", b =>
@@ -850,7 +880,7 @@ namespace WallsShop.Migrations
 
                     b.HasIndex("CategoryFK");
 
-                    b.ToTable("Products");
+                    b.ToTable("Products", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

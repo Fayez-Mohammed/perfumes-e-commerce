@@ -131,52 +131,16 @@ public class OffersController(
 
 
    /// <summary>
-   /// Gets the current offers localized according to the requested language. If no offers exist, a default promotional offer is returned.
+   /// Gets the current offers localized according to the requested language.
    /// </summary>
    /// <param name="languageCode">The language code that selects the localized offer content.</param>
-   /// <returns>An object containing either the offer list or a default offer under the reponse property.</returns>
+   /// <returns>An object containing the active offers list (or an empty list if none exist) under the response property.</returns>
    [ProducesResponseType(typeof(List<OfferReturnDto>), StatusCodes.Status200OK)]
    [HttpGet("get-offer")]
-   public async Task<IActionResult> GetOffers([FromQuery]  string languageCode)
+   public async Task<IActionResult> GetOffers([FromQuery] string languageCode = "ar")
    {
        var offers = await repo.GetOffers(languageCode);
-        if (offers == null || !offers.Any())
-        {
-            OfferReturnDto offersForEmpty = new OfferReturnDto();
-
-            if (languageCode.ToLower() == "en")
-            {
-                offersForEmpty = new OfferReturnDto
-                {
-                    Id = 1,
-                    Name = "Explore Our Products",
-                    Description = "Discover our latest products",
-                    CategoryEN = "Products",
-                    CategoryValue = "living-room",
-                    ImageUrl = "https://img.freepik.com/free-photo/cozy-stylish-living-room-with-neutral-tones-natural-light_23-2151965521.jpg?t=st=1771859501~exp=1771863101~hmac=d604acc25f421818c52953f40de1360fbc7fdcd1157962eb9da6611601b949d5&w=1480",
-                    EndDate =  DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7))
-                };
-                return Ok(new { reponse = offersForEmpty });
-
-            }
-            else
-            {
-                offersForEmpty = new OfferReturnDto
-                {
-                    Id = 1,
-                    Name = "تصفح منتجاتنا",
-                    Description = "اكتشف أحدث منتجاتنا",
-                    CategoryAR = "المنتجات",
-                    CategoryValue = "living-room",
-                    ImageUrl = "https://img.freepik.com/free-photo/cozy-stylish-living-room-with-neutral-tones-natural-light_23-2151965521.jpg?t=st=1771859501~exp=1771863101~hmac=d604acc25f421818c52953f40de1360fbc7fdcd1157962eb9da6611601b949d5&w=1480",
-                    EndDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7))
-                };
-                return Ok(new { reponse = offersForEmpty });
-
-            }
-        }
-
-        return Ok(new {reponse = offers});
+       return Ok(new { response = offers ?? new List<OfferReturnDto>() });
    }
     /// <summary>
     /// Deletes an offer by its identifier.

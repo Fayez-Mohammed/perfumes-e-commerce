@@ -195,7 +195,7 @@ var htmlMessage = $@"
       //  var maxUserNumber = await _context.Users.MaxAsync(u => (int?)u.UserNumber) ?? 0;
     //    user.UserNumber = maxUserNumber + 1;
         //await _context.SaveChangesAsync();
-        return Ok(new {response = LanguageCode == "ar" ? "تم التسجيل بنجاح. يرجى التحقق من بريدك الإلكتروني لتأكيد حسابك." : "Registration successful. Please check your email to verify your account.",token=encodedToken});
+        return Ok(new {response = LanguageCode == "ar" ? "تم التسجيل بنجاح. يرجى التحقق من بريدك الإلكتروني لتأكيد حسابك." : "Registration successful. Please check your email to verify your account."});
     }
     
     /// <summary>
@@ -276,21 +276,13 @@ var htmlMessage = $@"
             {
                 return Unauthorized(new { response = LanguageCode == "ar" ? "البريد الإلكتروني غير مؤكد. يرجى التحقق من بريدك الإلكتروني قبل تسجيل الدخول." : "Email not confirmed. Please verify your email before logging in." });
             }
-            var token = _tokenService.CreateToken(user);
+            var token = await _tokenService.CreateToken(user);
 
             return Ok(new { Email = user.Email, Token = token });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, LanguageCode == "ar" ? "حدث خطأ أثناء تسجيل الدخول للبريد الإلكتروني: {Email}" : "Error occurred during login for email: {Email}", loginDto.Email);
-			 
-			try
-            {
-                var path = Path.Combine(Directory.GetCurrentDirectory(), "login_error.txt");
-                System.IO.File.WriteAllText(path, ex.ToString());
-            }
-            catch {   }
-
             throw;
         }
     }
@@ -361,7 +353,10 @@ var htmlMessage = $@"
     [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateUserInfo([FromBody] UpdateUserDto updateUserDto, [FromQuery] string LanguageCode = "en")
     {
-        var user = await _userManager.FindByEmailAsync(updateUserDto.Email);
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+        var user = await _userManager.FindByIdAsync(userId);
         if (user == null) return NotFound(new {response = LanguageCode == "ar" ? "المستخدم غير موجود" : "User not found"});
 
         user.Name = updateUserDto.Name ?? user.Name;

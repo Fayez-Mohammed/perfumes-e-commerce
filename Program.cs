@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer; // Add this
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens; // Add this
 using Microsoft.OpenApi.Models;
@@ -143,6 +145,7 @@ builder.Services.AddAuthentication(options =>
 // --------------------------------------------
 
 builder.Services.AddSingleton<CartService>();
+builder.Services.AddHostedService<CartCleanupBackgroundService>();
 // 1. Load settings from appsettings.json
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
 builder.Services.Configure<PaymobSettings>(builder.Configuration.GetSection("Paymob"));
@@ -157,7 +160,13 @@ builder.Services.AddScoped<ReviewRepository>();
 builder.Services.AddScoped<ProductRepository>();
 builder.Services.AddScoped<DashboardCategoryRepository>();
 builder.Services.AddScoped<DashboardOfferRepository>();
+builder.Services.AddScoped<DashboardVideoRepository>();
+builder.Services.AddScoped<VideoRepository>();
 builder.Services.AddScoped<OrderRepository>();
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 104_857_600; // 100 MB for video uploads
+});
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<ProductViewTracker>();
 
@@ -266,7 +275,14 @@ app.UseSwaggerUI(options =>
 
 //app.UseCors("AllowAll");
 app.UseHttpsRedirection();
-app.UseStaticFiles(); 
+var staticFileContentTypeProvider = new FileExtensionContentTypeProvider();
+staticFileContentTypeProvider.Mappings[".mp4"] = "video/mp4";
+staticFileContentTypeProvider.Mappings[".webm"] = "video/webm";
+staticFileContentTypeProvider.Mappings[".mov"] = "video/quicktime";
+app.UseStaticFiles(new StaticFileOptions
+{
+    ContentTypeProvider = staticFileContentTypeProvider
+});
 app.UseRouting();
 //app.UseCors("AllowAngular");
 app.UseCors("AllowAll");

@@ -25,8 +25,23 @@ public class CartService
 
 
 
-    public async Task AddToCart(string userId, CartItem item)
+    private static decimal ResolveUnitPrice(decimal? variantPrice, decimal priceAfterDiscount, decimal price) =>
+        variantPrice is > 0
+            ? variantPrice.Value
+            : (priceAfterDiscount > 0 ? priceAfterDiscount : price);
+
+    private static decimal ResolveOriginalPrice(decimal? variantPriceBeforeDiscount, decimal? variantPrice, bool hasVariant, decimal price) =>
+        hasVariant
+            ? (variantPriceBeforeDiscount is > 0
+                ? variantPriceBeforeDiscount.Value
+                : (variantPrice is > 0 ? variantPrice.Value : price))
+            : price;
+
+    public async Task AddToCart(string? userId, CartItem item)
     {
+        if (string.IsNullOrEmpty(userId) || item.Quantity <= 0)
+            return;
+
         try
         {
             using var scope = _serviceProvider.CreateScope();
@@ -55,9 +70,8 @@ public class CartService
             item.ProductName = product.Name;
             item.ImageUrl = product.Images?.FirstOrDefault()?.RelativePath ?? string.Empty;
 
-            item.UnitPrice = variant?.Price > 0
-                ? variant.Price
-                : product.Price;
+            item.UnitPrice = ResolveUnitPrice(variant?.Price, product.PriceAfterDiscount, product.Price);
+            item.OriginalPrice = ResolveOriginalPrice(variant?.PriceBeforeDiscount, variant?.Price, variant != null, product.Price);
 
             item.Size = variant?.Size ?? string.Empty;
             item.Type = variant?.Type ?? string.Empty;
@@ -91,9 +105,9 @@ public class CartService
     }
 
 
-    public async Task<List<CartItem>> GetCartItems(string userId, string languageCode="en")
+    public async Task<List<CartItem>> GetCartItems(string? userId, string languageCode="en")
     {
-        if (_carts.TryGetValue(userId, out var cached))
+        if (!string.IsNullOrEmpty(userId) && _carts.TryGetValue(userId, out var cached))
         {
 
          var items = await GetProductImageName(cached.Cart.Items, languageCode);
@@ -104,9 +118,9 @@ public class CartService
 
         return new List<CartItem>();
     }
-    public async Task<int> GetCartItemsCount(string userId, string languageCode="en")
+    public async Task<int> GetCartItemsCount(string? userId, string languageCode="en")
     {
-        if (_carts.TryGetValue(userId, out var cached))
+        if (!string.IsNullOrEmpty(userId) && _carts.TryGetValue(userId, out var cached))
         {
 
          var items = await GetProductImageNameCount(cached.Cart.Items, languageCode);
@@ -199,13 +213,9 @@ public class CartService
                 Size = isArabic ? variant?.Size ?? "" : variant?.EnglishSize ?? "",
                 Type = isArabic ? variant?.Type ?? "" : variant?.EnglishType ?? "",
 
-                UnitPrice = item.VariantId > 0
-                    ? (variant?.Price ?? product.PriceAfterDiscount)
-                    : product.PriceAfterDiscount,
+                UnitPrice = ResolveUnitPrice(variant?.Price, product.PriceAfterDiscount, product.Price),
 
-                OriginalPrice = item.VariantId > 0
-                    ? (variant?.PriceBeforeDiscount ?? variant?.Price ?? product.Price)
-                    : product.Price,
+                OriginalPrice = ResolveOriginalPrice(variant?.PriceBeforeDiscount, variant?.Price, variant != null, product.Price),
 
                 ImageUrl = product.Image ?? string.Empty
             };
@@ -265,18 +275,21 @@ public class CartService
         }
     }
     // ضيف الدالة دي جوه CartService.cs
-    public void ClearCart(string userId)
+    public void ClearCart(string? userId)
     {
+        if (string.IsNullOrEmpty(userId))
+            return;
+
         // TryRemove بتحذف العنصر من الـ Dictionary بأمان
         _carts.TryRemove(userId, out _);
     }
 
     // داخل CartService.cs
 
-    public async Task<List<CartItem>?> UpdateQuantityAsync(string userId, int productId, int variantId, int quantity, int colorId, string languageCode)
+    public async Task<List<CartItem>?> UpdateQuantityAsync(string? userId, int productId, int variantId, int quantity, int colorId, string languageCode)
     {
       
-        if (_carts.TryGetValue(userId, out var cachedCart))
+        if (!string.IsNullOrEmpty(userId) && _carts.TryGetValue(userId, out var cachedCart))
         {
            
             var itemToUpdate = cachedCart.Cart.Items
@@ -303,9 +316,9 @@ public class CartService
     }
     // داخل CartService.cs
 
-    public async Task<List<CartItem>?> RemoveItemAsync(string userId, int productId, int variantId, int colorId, string languageCode)
+    public async Task<List<CartItem>?> RemoveItemAsync(string? userId, int productId, int variantId, int colorId, string languageCode)
     {
-        if (_carts.TryGetValue(userId, out var cachedCart))
+        if (!string.IsNullOrEmpty(userId) && _carts.TryGetValue(userId, out var cachedCart))
         {
             var itemToDelete = cachedCart.Cart.Items
                 .FirstOrDefault(i => i.ProductId == productId &&
@@ -323,9 +336,9 @@ public class CartService
         return null;
     }
 
-    public int GetCountOfCartsForSpecificUser(string userId)
+    public int GetCountOfCartsForSpecificUser(string? userId)
     {
-        if (_carts.TryGetValue(userId, out var cached))
+        if (!string.IsNullOrEmpty(userId) && _carts.TryGetValue(userId, out var cached))
         {
 
             int CartsCount = cached.Cart.Items.Count;

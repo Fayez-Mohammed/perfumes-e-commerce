@@ -6,6 +6,7 @@ using WallsShop.Context;
 using WallsShop.DTO;
 using WallsShop.Entity;
 using WallsShop.Properties.Entity;
+using WallsShop.Repository;
 using WallsShop.Services;
 
 namespace WallsShop.Controllers;
@@ -21,6 +22,7 @@ public class OrdersController : ControllerBase
 
     private readonly WallShopContext _context;
     private readonly CartService _cartService;
+    private readonly OrderRepository _orderRepo;
     private readonly IPaymobService _paymob;
     private readonly PaymobSettings _paymobSettings;
     private readonly ILogger<OrdersController> _logger;
@@ -28,15 +30,54 @@ public class OrdersController : ControllerBase
     public OrdersController(
         WallShopContext context,
         CartService cartService,
+        OrderRepository orderRepo,
         IPaymobService paymob,
         IOptions<PaymobSettings> paymobSettings,
         ILogger<OrdersController> logger)
     {
         _context = context;
         _cartService = cartService;
+        _orderRepo = orderRepo;
         _paymob = paymob;
         _paymobSettings = paymobSettings.Value;
         _logger = logger;
+    }
+
+    /// <summary>Gets all orders placed by the currently authenticated user, including items and payment/delivery tracking info.</summary>
+    /// <param name="LanguageCode">Language code used for localized labels ("ar" or "en", defaults to "ar").</param>
+    /// <param name="ct">Cancellation token for the request.</param>
+    /// <returns>The list of the authenticated user's orders.</returns>
+    [HttpGet("my-orders")]
+    [ProducesResponseType(typeof(List<UserOrderDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetMyOrders([FromQuery] string LanguageCode = "ar", CancellationToken ct = default)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+        var orders = await _orderRepo.GetUserOrdersAsync(userId, LanguageCode, ct);
+        return Ok(orders);
+    }
+
+    /// <summary>Gets full details and item breakdown for a specific order belonging to the authenticated user.</summary>
+    /// <param name="id">The identifier of the order.</param>
+    /// <param name="LanguageCode">Language code used for localized labels ("ar" or "en", defaults to "ar").</param>
+    /// <param name="ct">Cancellation token for the request.</param>
+    /// <returns>The order details if owned by the current user; otherwise 404 NotFound.</returns>
+    [HttpGet("my-orders/{id:int}")]
+    [ProducesResponseType(typeof(UserOrderDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetMyOrderById(int id, [FromQuery] string LanguageCode = "ar", CancellationToken ct = default)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+        var order = await _orderRepo.GetUserOrderDetailsAsync(id, userId, LanguageCode, ct);
+        if (order == null)
+            return NotFound(new { message = LanguageCode == "ar" ? "الطلب غير موجود" : "Order not found" });
+
+        return Ok(order);
     }
 
     /// <summary>Creates a new order for the authenticated user (cash on delivery or online payment via Paymob).</summary>
