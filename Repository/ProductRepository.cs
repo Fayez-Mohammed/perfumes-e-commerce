@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq.Expressions;
 using WallsShop.Context;
 using WallsShop.DTO;
 using WallsShop.Entity;
@@ -1287,107 +1288,82 @@ public class ProductRepository(WallShopContext ctx)
     //    return await dtoQuery.ToPagedListAsync(queryParameters.page, queryParameters.pageSize, categoryNameDisplay);
     //}
 
+    private static Expression<Func<Product, ProductOverviewDto>> BuildOverviewProjection(List<int> wishlistIds) =>
+        p => new ProductOverviewDto
+        {
+            Id = p.Id,
+            Name = p.Name,
+            CategoryAr = p.CategoryImage != null ? p.CategoryImage.Category.Replace("-", " ") : null,
+            CategoryValue = p.CategoryImage != null ? p.CategoryImage.CategoryValue : null,
+            Price = p.Price,
+            PriceAfterDiscount = p.PriceAfterDiscount,
+            ImageUrl = p.Images.FirstOrDefault() != null ? p.Images.FirstOrDefault()!.RelativePath : null,
+            TotalPeopleRating = p.TotalRatePeople,
+            AverageRatingPeople = p.AverageRate,
+            IsInWishList = wishlistIds.Contains(p.Id)
+        };
+
+    private static Expression<Func<Product, ProductTranslationOverviewDto>> BuildTranslationOverviewProjection(List<int> wishlistIds) =>
+        pt => new ProductTranslationOverviewDto
+        {
+            Id = pt.Id,
+            Name = pt.NameEN,
+            CategoryEn = pt.CategoryImage != null ? pt.CategoryImage.CategoryValue.Replace("-", " ") : null,
+            CategoryValue = pt.CategoryImage != null ? pt.CategoryImage.CategoryValue : null,
+            Price = pt.Price,
+            PriceAfterDiscount = pt.PriceAfterDiscount,
+            ImageUrl = pt.Images.FirstOrDefault() != null ? pt.Images.FirstOrDefault()!.RelativePath : null,
+            TotalPeopleRating = pt.TotalRatePeople,
+            AverageRatingPeople = pt.AverageRate,
+            IsInWishList = wishlistIds.Contains(pt.Id)
+        };
+
     public async Task<List<ProductOverviewDto>> GetTop4RatedProducts(QueryParameters queryParameters, string? userId = null)
     {
         var wishlistIds = await GetWishlistIdsAsync(userId, queryParameters.Ids);
 
-        return await ctx?.Products
+        return await ctx.Products
+            .AsNoTracking()
             .OrderByDescending(a => a.AverageRate)
-            .Include(a=>a.Variants)
-            .Include(a=>a.CategoryImage)
-            .Include(a => a.Images)
             .Take(4)
-            .Select(p => new ProductOverviewDto
-            {
-                Id = p.Id,
-                Name = p.Name,
-                CategoryAr = p.CategoryImage.Category.Replace("-", " "),
-                CategoryValue= p.CategoryImage.CategoryValue,
-                Price = p.Price,
-                PriceAfterDiscount = p.PriceAfterDiscount,
-                ImageUrl = p.Images.FirstOrDefault().RelativePath,
-                TotalPeopleRating = p.TotalRatePeople,
-                AverageRatingPeople = p.AverageRate,
-                IsInWishList = wishlistIds.Contains(p.Id)
-            }).ToListAsync();
-             
+            .Select(BuildOverviewProjection(wishlistIds))
+            .ToListAsync();
     }
 
     public async Task<List<ProductOverviewDto>> GetTop4RecentProducts(QueryParameters query, string? userId = null)
     {
         var wishlistIds = await GetWishlistIdsAsync(userId, query.Ids);
 
-        return await ctx?.Products
+        return await ctx.Products
+            .AsNoTracking()
             .OrderByDescending(a => a.Created)
-            .Include(a => a.Variants)
-            .Include(a => a.Images)
-            .OrderByDescending(a=>a.Created)
             .Take(4)
-            .Select(p => new ProductOverviewDto
-            {
-                Id = p.Id,
-                Name = p.Name,
-                Price = p.Price,
-                PriceAfterDiscount = p.PriceAfterDiscount,
-                ImageUrl = p.Images.FirstOrDefault().RelativePath,
-                TotalPeopleRating = p.TotalRatePeople,
-                AverageRatingPeople = p.AverageRate,
-                  IsInWishList = wishlistIds.Contains(p.Id)
-            }).ToListAsync();
+            .Select(BuildOverviewProjection(wishlistIds))
+            .ToListAsync();
     }
 
     public async Task<List<ProductTranslationOverviewDto>> GetTop4RecentProductTranslations(QueryParameters queryParameters, string? userId = null)
     {
         var wishlistIds = await GetWishlistIdsAsync(userId, queryParameters.Ids);
-                    
-        return await ctx?
-            //.ProductTranslations
-            //.Include(t => t.Product)
-            //.ThenInclude(p => p.Variants)  
-            //.Include(t => t.Product)
-            //.ThenInclude(p => p.Images)    
-            .Products
+
+        return await ctx.Products
+            .AsNoTracking()
             .OrderByDescending(a => a.Created)
-            .Include(a => a.Variants)
-            .Include(a => a.Images)
             .Take(4)
-            .Select(pt => new ProductTranslationOverviewDto{
-                Id = pt.Id,
-                Name = pt.NameEN,
-                Price = pt.Price,
-                PriceAfterDiscount = pt.PriceAfterDiscount,
-                ImageUrl = pt.Images.FirstOrDefault().RelativePath,
-                TotalPeopleRating = pt.TotalRatePeople,
-                AverageRatingPeople = pt.AverageRate,
-                 IsInWishList = wishlistIds.Contains(pt.Id)
-            })
-            .ToListAsync<ProductTranslationOverviewDto>();
+            .Select(BuildTranslationOverviewProjection(wishlistIds))
+            .ToListAsync();
     }
 
     public async Task<List<ProductTranslationOverviewDto>> GetTop4RatedProductTranslations(QueryParameters queryParameters, string? userId = null)
     {
         var wishlistIds = await GetWishlistIdsAsync(userId, queryParameters.Ids);
 
-        return await //ctx?.ProductTranslations
-        //    .Include(t => t.Product).ThenInclude(p => p.Variants)
-        //    .Include(t => t.Product).ThenInclude(p => p.Images)
-        ctx?.Products
+        return await ctx.Products
+            .AsNoTracking()
             .OrderByDescending(a => a.AverageRate)
-            .Include(a => a.Variants)
-            .Include(a => a.CategoryImage)
-            .Include(a => a.Images)
             .Take(4)
-            .Select(pt => new ProductTranslationOverviewDto(){
-                Id = pt.Id,
-                Name = pt.NameEN,
-                Price = pt.Price,
-                PriceAfterDiscount = pt.PriceAfterDiscount,
-                ImageUrl = pt.Images.FirstOrDefault().RelativePath,
-                TotalPeopleRating = pt.TotalRatePeople,
-                AverageRatingPeople = pt.AverageRate,
-                 IsInWishList = wishlistIds.Contains(pt.Id)
-            })
-            .ToListAsync<ProductTranslationOverviewDto>();
+            .Select(BuildTranslationOverviewProjection(wishlistIds))
+            .ToListAsync();
     }
     
     public List<string> GetProductTranslationCategories()
@@ -1398,73 +1374,88 @@ public class ProductRepository(WallShopContext ctx)
             .ToList();
     }
 
-    public async Task<PagedResult<ProductOverviewDto>> GetProductsByCategory(QueryParameters queryParameters , int Id, string? userId = null)
+    private async Task<(string CategoryAr, string CategoryEn, string CategoryValue)?> GetProductCategoryInfoAsync(int productId)
+    {
+        if (productId <= 0)
+            return null;
+
+        var product = await ctx.Products
+            .AsNoTracking()
+            .Where(a => a.Id == productId)
+            .Select(a => new
+            {
+                a.CategoryFK,
+                CategoryAr = a.CategoryImage != null ? a.CategoryImage.Category : null,
+                CategoryValue = a.CategoryImage != null ? a.CategoryImage.CategoryValue : null
+            })
+            .FirstOrDefaultAsync();
+
+        if (product == null || product.CategoryFK == null || string.IsNullOrWhiteSpace(product.CategoryValue))
+            return null;
+
+        return (
+            (product.CategoryAr ?? string.Empty).Replace("-", " "),
+            product.CategoryValue.Replace("-", " "),
+            product.CategoryValue
+        );
+    }
+
+    public async Task<PagedResult<ProductOverviewDto>> GetProductsByCategory(QueryParameters queryParameters, int Id, string? userId = null)
     {
         int currentPage = queryParameters.page > 0 ? queryParameters.page : 1;
         int pageSize = queryParameters.pageSize > 0 ? queryParameters.pageSize : 12;
-        var wishlistIds = await GetWishlistIdsAsync(userId, queryParameters.Ids);
-       // var product=ctx.Products.Include(c=>c.CategoryImage).FirstOrDefault(a => a.Id == Id);
-        var product=ctx.Products.FirstOrDefault(a => a.Id == Id);
-        var categ = ctx.CategoryImages.FirstOrDefault(c => c.Id == product.CategoryFK);
-        if (product == null) 
+
+        var categoryInfo = await GetProductCategoryInfoAsync(Id);
+        if (categoryInfo == null)
+        {
+            return new PagedResult<ProductOverviewDto>
             {
-            return new PagedResult<ProductOverviewDto>();
+                Data = new List<ProductOverviewDto>(),
+                TotalPages = 0,
+                CurrentPage = currentPage,
+                CategoryName = string.Empty
+            };
         }
-        var dtoQuery =ctx.Products.Include(a => a.CategoryImage)
-            .Where(a => a.CategoryImage.CategoryValue.ToLower() == categ.CategoryValue.ToLower() && a.Id != Id)
-            .Include(a => a.Images)
+
+        var wishlistIds = await GetWishlistIdsAsync(userId, queryParameters.Ids);
+        var catValueLower = categoryInfo.Value.CategoryValue.ToLower();
+
+        var dtoQuery = ctx.Products
+            .AsNoTracking()
+            .Where(a => a.CategoryImage != null && a.CategoryImage.CategoryValue.ToLower() == catValueLower && a.Id != Id)
             .Take(4)
-            .Select(p => new ProductOverviewDto
-            {
-                Id = p.Id,
-                Name = p.Name,
-                Price = p.Price,
-                PriceAfterDiscount = p.PriceAfterDiscount,
-                ImageUrl = p.Images.FirstOrDefault().RelativePath,
-                TotalPeopleRating = p.TotalRatePeople,
-                AverageRatingPeople = p.AverageRate,
-                IsInWishList = wishlistIds.Contains(p.Id)
-            }).AsQueryable();
-        string categoryNameDisplay =  product.CategoryImage.Category.Replace("-", " ");
-        return await dtoQuery.ToPagedListAsync(currentPage, pageSize, categoryNameDisplay);
+            .Select(BuildOverviewProjection(wishlistIds));
 
+        return await dtoQuery.ToPagedListAsync(currentPage, pageSize, categoryInfo.Value.CategoryAr);
     }
-
 
     public async Task<PagedResult<ProductTranslationOverviewDto>> GetProductTranslationsByCategory(QueryParameters queryParameters, int Id, string? userId = null)
     {
         int currentPage = queryParameters.page > 0 ? queryParameters.page : 1;
         int pageSize = queryParameters.pageSize > 0 ? queryParameters.pageSize : 12;
-        var wishlistIds = await GetWishlistIdsAsync(userId, queryParameters.Ids);
-        //  var product = ctx.Products.Include(c => c.CategoryImage).FirstOrDefault(a => a.Id == Id);
-        var product = ctx.Products.FirstOrDefault(a => a.Id == Id);
-        var categ = ctx.CategoryImages.FirstOrDefault(c => c.Id == product.CategoryFK);
 
-        if (product == null)
+        var categoryInfo = await GetProductCategoryInfoAsync(Id);
+        if (categoryInfo == null)
         {
-            return new PagedResult<ProductTranslationOverviewDto>();
+            return new PagedResult<ProductTranslationOverviewDto>
+            {
+                Data = new List<ProductTranslationOverviewDto>(),
+                TotalPages = 0,
+                CurrentPage = currentPage,
+                CategoryName = string.Empty
+            };
         }
-        var dtoQuery = ctx.Products.Include(a => a.CategoryImage)//ctx.ProductTranslations.Include(a => a.Product).ThenInclude(c => c.CategoryImage)
-            .Where(a => a.CategoryImage.CategoryValue.ToLower() == categ.CategoryValue.ToLower() && a.Id != Id)
-           // .Include(a=>a.Product)
-            .Include(a => a.Images)
+
+        var wishlistIds = await GetWishlistIdsAsync(userId, queryParameters.Ids);
+        var catValueLower = categoryInfo.Value.CategoryValue.ToLower();
+
+        var dtoQuery = ctx.Products
+            .AsNoTracking()
+            .Where(a => a.CategoryImage != null && a.CategoryImage.CategoryValue.ToLower() == catValueLower && a.Id != Id)
             .Take(4)
-            .Select(pt => new ProductTranslationOverviewDto(){
-                Id = pt.Id,
-                Name = pt.NameEN,
-                Price = pt.Price,
-                ImageUrl = pt.Images.FirstOrDefault().RelativePath,
-                CategoryValue = pt.CategoryImage.CategoryValue,
-                CategoryEn=pt.CategoryImage.CategoryValue.Replace("-", " "),
-                PriceAfterDiscount = pt.PriceAfterDiscount,
-                TotalPeopleRating = pt.TotalRatePeople,
-                AverageRatingPeople = pt.AverageRate,
-                IsInWishList = wishlistIds.Contains(pt.Id)
-            }).AsQueryable();
+            .Select(BuildTranslationOverviewProjection(wishlistIds));
 
-
-        string categoryNameDisplay = product.CategoryImage.CategoryValue.Replace("-", " ");
-        return await dtoQuery.ToPagedListAsync(currentPage, pageSize, categoryNameDisplay);
+        return await dtoQuery.ToPagedListAsync(currentPage, pageSize, categoryInfo.Value.CategoryEn);
     }
 
     public void SaveChanges()

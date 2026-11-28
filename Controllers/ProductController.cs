@@ -63,13 +63,12 @@ public class ProductController(ProductRepository products , IWebHostEnvironment 
      /// <summary>
      /// Gets products related to the given product by its category, localized according to the requested language.
      /// </summary>
-     /// <param name="queryParameters">Query parameters including paging and language code.</param>
-     /// <param name="id">The identifier of the product whose related products are requested.</param>
+     /// <param name="queryParameters">Query parameters including the product id, paging and language code.</param>
      /// <returns>An object containing the related product list under the Response property.</returns>
      [ProducesResponseType(typeof(PagedResult<ProductOverviewDto>), StatusCodes.Status200OK)]
      [HttpGet("related-product")]
      public async Task<IActionResult> GetRelatedProducts
-          ([FromQuery] QueryParameters queryParameters , [FromQuery] int id )
+          ([FromQuery] QueryParameters queryParameters)
     {
         string? userId = null;
         if (User.Identity != null && User.Identity.IsAuthenticated)
@@ -79,13 +78,13 @@ public class ProductController(ProductRepository products , IWebHostEnvironment 
         if (queryParameters.LanguageCode == "ar" || string.IsNullOrEmpty(queryParameters.LanguageCode))
           {
 
-               var list = await products.GetProductsByCategory(queryParameters, id,userId);
+               var list = await products.GetProductsByCategory(queryParameters, queryParameters.id, userId);
 
               // list = list.Where(p => p.Id != id).ToList();
 
                return Ok(new { Response = list });
           }
-          var list1 = await products.GetProductTranslationsByCategory(queryParameters, id,userId);
+          var list1 = await products.GetProductTranslationsByCategory(queryParameters, queryParameters.id, userId);
           
         //  list1 = list1.Where(p => p.Id != id).ToList();
           
